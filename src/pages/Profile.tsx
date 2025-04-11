@@ -8,10 +8,72 @@ import {
   Settings, 
   Share2, 
   Shield, 
-  User 
+  User,
+  Crown,
+  ChevronRight as ChevronRightIcon
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 const Profile = () => {
+  const { user, signOut, subscription } = useAuth();
+  const [userStats, setUserStats] = useState({
+    uploads: 0,
+    totalCalories: 0,
+    totalProtein: 0
+  });
+  
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+      
+      try {
+        // Get total uploads count
+        const { count: uploads } = await supabase
+          .from("food_uploads")
+          .select("*", { count: 'exact', head: true });
+        
+        // Get nutritional totals
+        const { data: nutritionData, error } = await supabase
+          .from("food_uploads")
+          .select("calories, protein")
+          .order("created_at", { ascending: false })
+          .limit(100);
+        
+        if (error) throw error;
+        
+        // Calculate totals
+        const totalCalories = nutritionData.reduce((sum, item) => sum + (item.calories || 0), 0);
+        const totalProtein = nutritionData.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+        
+        setUserStats({
+          uploads: uploads || 0,
+          totalCalories,
+          totalProtein: Math.round(totalProtein)
+        });
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      }
+    };
+    
+    fetchUserStats();
+  }, [user]);
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Você saiu com sucesso");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Erro ao sair");
+    }
+  };
+
+  const isPremiumUser = subscription && subscription.isActive && ["monthly", "annual"].includes(subscription.plan);
+
   return (
     <div className="pb-8">
       <div className="flex items-center gap-4 mb-8">
@@ -22,7 +84,15 @@ const Profile = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold">Seu Perfil</h1>
-          <p className="text-foodcam-gray">Gerencie suas preferências</p>
+          <p className="text-foodcam-gray">{user?.email}</p>
+          {isPremiumUser && (
+            <div className="flex items-center mt-1 text-amber-400">
+              <Crown size={14} className="mr-1" />
+              <span className="text-sm font-medium">
+                Plano {subscription.plan === "monthly" ? "Mensal" : "Anual"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
       
@@ -30,21 +100,38 @@ const Profile = () => {
         <h2 className="text-lg font-bold mb-4">Resumo Diário</h2>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{userStats.uploads}</div>
             <div className="text-foodcam-gray text-sm">Refeições</div>
           </div>
           <div>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{userStats.totalCalories}</div>
             <div className="text-foodcam-gray text-sm">Calorias</div>
           </div>
           <div>
-            <div className="text-2xl font-bold">0g</div>
+            <div className="text-2xl font-bold">{userStats.totalProtein}g</div>
             <div className="text-foodcam-gray text-sm">Proteína</div>
           </div>
         </div>
       </div>
       
       <div className="space-y-4">
+        {!isPremiumUser && (
+          <Link to="/subscription" className="block">
+            <div className="glass-card p-5 flex items-center justify-between border-foodcam-blue/30 border bg-gradient-to-r from-foodcam-darker to-foodcam-dark">
+              <div className="flex items-center">
+                <div className="h-10 w-10 rounded-full flex items-center justify-center bg-foodcam-blue/20">
+                  <Crown className="text-foodcam-blue" />
+                </div>
+                <div className="ml-3">
+                  <div className="font-medium">Faça upgrade para o Premium</div>
+                  <div className="text-foodcam-gray text-sm">Análises ilimitadas e mais</div>
+                </div>
+              </div>
+              <ChevronRightIcon className="text-foodcam-gray" />
+            </div>
+          </Link>
+        )}
+        
         <div className="glass-card overflow-hidden">
           <ProfileMenuItem 
             icon={<Bell className="text-foodcam-blue" />}
@@ -86,6 +173,7 @@ const Profile = () => {
         <Button 
           variant="outline" 
           className="w-full text-foodcam-red/80 hover:text-foodcam-red border-foodcam-red/20 hover:border-foodcam-red/30"
+          onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sair
@@ -132,16 +220,10 @@ const ProfileMenuItem = ({
       </div>
     ) : (
       <div className="text-foodcam-gray">
-        <ChevronRight />
+        <ChevronRightIcon />
       </div>
     )}
   </div>
-);
-
-const ChevronRight = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
 );
 
 export default Profile;

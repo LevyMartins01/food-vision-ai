@@ -1,33 +1,49 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CameraComponent from "@/components/camera/CameraComponent";
 import { nanoid } from "nanoid";
 import LoadingAnalysis from "@/components/analysis/LoadingAnalysis";
 import NutritionCard, { FoodAnalysis } from "@/components/analysis/NutritionCard";
 import { toast } from "sonner";
 import { analyzeImageWithOpenAI } from "@/services/openaiService";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Camera = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { refreshUploadCredits } = useAuth();
   
   const handleImageCapture = async (imageData: string) => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
-      // Verificar se a chave da API está configurada
+      // Verify if OpenAI API key exists
       if (!import.meta.env.VITE_OPENAI_API_KEY) {
         throw new Error("API key da OpenAI não configurada. Por favor, adicione a chave no arquivo .env");
       }
       
-      // Analisar a imagem com a API da OpenAI
+      // Analyze the image with OpenAI API
       const result = await analyzeImageWithOpenAI(imageData);
       
       setAnalysisResult(result);
+      
+      // Store the analysis in Supabase
+      await supabase.from("food_uploads").insert({
+        food_name: result.name,
+        calories: result.calories,
+        protein: result.protein,
+        carbs: result.carbs,
+        fat: result.fat,
+        image_url: result.image.substring(0, 255), // Limit URL length for DB
+      });
+      
+      // Refresh upload credits after successful analysis
+      await refreshUploadCredits();
     } catch (error) {
-      console.error("Erro na análise:", error);
+      console.error("Error analyzing image:", error);
       setError(error instanceof Error ? error.message : "Erro desconhecido na análise");
       toast.error("Não foi possível analisar a imagem. Por favor, tente novamente.");
     } finally {
@@ -38,7 +54,7 @@ const Camera = () => {
   const handleSaveAnalysis = () => {
     if (!analysisResult) return;
     
-    // Salvar no localStorage
+    // Save to localStorage
     const savedItems = JSON.parse(localStorage.getItem("foodcam-history") || "[]");
     
     const newItem = {

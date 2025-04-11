@@ -1,9 +1,12 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Camera, Sparkles, TrendingUp } from "lucide-react";
+import { Camera, Sparkles, TrendingUp, ChevronRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Home = () => {
+  const { user } = useAuth();
+  
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center text-center mt-10 mb-14">
@@ -28,12 +31,25 @@ const Home = () => {
         <p className="text-foodcam-gray mb-6">
           Tire uma foto do seu alimento para obter informações nutricionais detalhadas instantaneamente
         </p>
-        <Link to="/camera">
-          <Button className="w-full blue-gradient">
-            <Camera className="mr-2 h-5 w-5" />
-            Analisar Alimento
-          </Button>
-        </Link>
+        {user ? (
+          <Link to="/camera">
+            <Button className="w-full blue-gradient">
+              <Camera className="mr-2 h-5 w-5" />
+              Analisar Alimento
+            </Button>
+          </Link>
+        ) : (
+          <div className="space-y-3">
+            <Link to="/auth">
+              <Button className="w-full blue-gradient">
+                Entrar ou Cadastrar
+              </Button>
+            </Link>
+            <p className="text-xs text-foodcam-gray text-center">
+              Faça login para começar a analisar alimentos
+            </p>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-3 gap-4">
@@ -53,6 +69,24 @@ const Home = () => {
           value="< 3s" 
         />
       </div>
+      
+      {!user && (
+        <div className="glass-card p-5 mt-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-bold mb-1">Experimente Grátis</h3>
+              <p className="text-foodcam-gray text-sm">
+                2 análises gratuitas por dia
+              </p>
+            </div>
+            <Link to="/auth">
+              <Button size="sm" variant="outline" className="flex items-center">
+                Começar <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
       
       <div className="text-center text-xs text-foodcam-gray mt-8">
         © 2024 FoodCam AI • Análise precisa de alimentos
