@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				foodcam: {
+					dark: '#121218',
+					darker: '#0A0A0F',
+					blue: '#4786FF',
+					'blue-light': '#61A0FF',
+					'blue-dark': '#3D5AFE',
+					green: '#4CAF50',
+					red: '#F44336',
+					gray: '#8E9196',
+					'gray-dark': '#4D4D56'
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,53 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'fade-out': {
+					'0%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					},
+					'100%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					}
+				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
+				'pulse-blue': {
+					'0%, 100%': {
+						'box-shadow': '0 0 0 0 rgba(71, 134, 255, 0.7)'
+					},
+					'50%': {
+						'box-shadow': '0 0 0 10px rgba(71, 134, 255, 0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out',
+				'pulse-blue': 'pulse-blue 2s infinite'
 			}
 		}
 	},
