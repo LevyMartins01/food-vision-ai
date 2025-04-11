@@ -11,6 +11,7 @@ interface NutritionCardProps {
 }
 
 export interface FoodAnalysis {
+  id?: string;
   name: string;
   confidence: number;
   calories: number;
@@ -19,19 +20,19 @@ export interface FoodAnalysis {
   fat: number;
   image: string;
   servingSize: string;
+  date?: string;
 }
 
 const NutritionCard = ({ food, onSave }: NutritionCardProps) => {
   const handleSave = () => {
     onSave();
-    toast.success("Análise salva com sucesso!");
   };
 
   const totalNutrients = food.protein + food.carbs + food.fat;
   
-  const proteinPercentage = Math.round((food.protein / totalNutrients) * 100);
-  const carbsPercentage = Math.round((food.carbs / totalNutrients) * 100);
-  const fatPercentage = Math.round((food.fat / totalNutrients) * 100);
+  const proteinPercentage = Math.round((food.protein / totalNutrients) * 100) || 0;
+  const carbsPercentage = Math.round((food.carbs / totalNutrients) * 100) || 0;
+  const fatPercentage = Math.round((food.fat / totalNutrients) * 100) || 0;
 
   return (
     <div className="glass-card overflow-hidden animate-scale-in">

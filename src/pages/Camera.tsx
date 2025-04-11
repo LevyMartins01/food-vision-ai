@@ -5,42 +5,40 @@ import { nanoid } from "nanoid";
 import LoadingAnalysis from "@/components/analysis/LoadingAnalysis";
 import NutritionCard, { FoodAnalysis } from "@/components/analysis/NutritionCard";
 import { toast } from "sonner";
-
-// Simulated mock data for demo purpose
-const mockFoodData: FoodAnalysis = {
-  name: "Salada de Camarão",
-  confidence: 0.93,
-  calories: 245,
-  protein: 18,
-  carbs: 12,
-  fat: 14,
-  servingSize: "1 porção (200g)",
-  image: "" // Will be filled with captured image
-};
+import { analyzeImageWithOpenAI } from "@/services/openaiService";
 
 const Camera = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
-  const handleImageCapture = (imageData: string) => {
+  const handleImageCapture = async (imageData: string) => {
     setIsAnalyzing(true);
+    setError(null);
     
-    // Simulate API call to analyze image
-    setTimeout(() => {
-      // For demo, we'll use the mock data with the captured image
-      setAnalysisResult({
-        ...mockFoodData,
-        image: imageData
-      });
+    try {
+      // Verificar se a chave da API está configurada
+      if (!import.meta.env.VITE_OPENAI_API_KEY) {
+        throw new Error("API key da OpenAI não configurada. Por favor, adicione a chave no arquivo .env");
+      }
+      
+      // Analisar a imagem com a API da OpenAI
+      const result = await analyzeImageWithOpenAI(imageData);
+      
+      setAnalysisResult(result);
+    } catch (error) {
+      console.error("Erro na análise:", error);
+      setError(error instanceof Error ? error.message : "Erro desconhecido na análise");
+      toast.error("Não foi possível analisar a imagem. Por favor, tente novamente.");
+    } finally {
       setIsAnalyzing(false);
-    }, 2500);
+    }
   };
   
   const handleSaveAnalysis = () => {
     if (!analysisResult) return;
     
-    // In a real app, this would save to a database
-    // For now, we'll simulate saving to localStorage
+    // Salvar no localStorage
     const savedItems = JSON.parse(localStorage.getItem("foodcam-history") || "[]");
     
     const newItem = {
@@ -51,15 +49,18 @@ const Camera = () => {
     
     savedItems.unshift(newItem);
     localStorage.setItem("foodcam-history", JSON.stringify(savedItems));
+    
+    toast.success("Análise salva com sucesso no histórico!");
   };
   
   const handleReset = () => {
     setAnalysisResult(null);
+    setError(null);
   };
 
   return (
     <div className="mb-8">
-      {!isAnalyzing && !analysisResult && (
+      {!isAnalyzing && !analysisResult && !error && (
         <CameraComponent onImageCapture={handleImageCapture} />
       )}
       
@@ -67,7 +68,20 @@ const Camera = () => {
         <LoadingAnalysis />
       )}
       
-      {!isAnalyzing && analysisResult && (
+      {error && !isAnalyzing && (
+        <div className="glass-card p-6 text-center">
+          <h3 className="text-xl font-medium mb-4 text-foodcam-red">Erro na Análise</h3>
+          <p className="mb-4">{error}</p>
+          <button 
+            onClick={handleReset}
+            className="px-4 py-2 bg-foodcam-blue text-white rounded-lg"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      )}
+      
+      {!isAnalyzing && analysisResult && !error && (
         <div>
           <NutritionCard food={analysisResult} onSave={handleSaveAnalysis} />
           <div className="mt-4 text-center">
