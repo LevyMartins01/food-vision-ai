@@ -32,25 +32,34 @@ const Profile = () => {
       
       try {
         // Get total uploads count
-        const { count: uploads } = await supabase
+        const { count, error: countError } = await supabase
           .from("food_uploads")
-          .select("*", { count: 'exact', head: true });
+          .select("*", { count: 'exact', head: true })
+          .eq("user_id", user.id);
+          
+        if (countError) throw countError;
         
         // Get nutritional totals
-        const { data: nutritionData, error } = await supabase
+        const { data: nutritionData, error: nutritionError } = await supabase
           .from("food_uploads")
           .select("calories, protein")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(100);
         
-        if (error) throw error;
+        if (nutritionError) throw nutritionError;
         
         // Calculate totals
-        const totalCalories = nutritionData.reduce((sum, item) => sum + (item.calories || 0), 0);
-        const totalProtein = nutritionData.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+        let totalCalories = 0;
+        let totalProtein = 0;
+        
+        if (nutritionData && nutritionData.length > 0) {
+          totalCalories = nutritionData.reduce((sum, item) => sum + (item.calories || 0), 0);
+          totalProtein = nutritionData.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+        }
         
         setUserStats({
-          uploads: uploads || 0,
+          uploads: count || 0,
           totalCalories,
           totalProtein: Math.round(totalProtein)
         });

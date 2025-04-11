@@ -6,8 +6,8 @@ import { ptBR } from "date-fns/locale";
 
 interface HistoryItemProps {
   item: FoodAnalysis & { 
-    date: Date;
     id: string;
+    // date already exists in FoodAnalysis
   };
 }
 

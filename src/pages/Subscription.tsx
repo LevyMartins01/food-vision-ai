@@ -1,3 +1,4 @@
+
 import SubscriptionPlans from "@/components/subscription/SubscriptionPlans";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,27 +23,30 @@ const Subscription = () => {
         return;
       }
       
-      fetchSubscription();
+      fetchSubscription(data.session.user.id);
     };
     
     checkAuth();
   }, [navigate]);
   
-  const fetchSubscription = async () => {
+  const fetchSubscription = async (userId: string) => {
     try {
       setIsLoading(true);
       
       const { data, error } = await supabase
         .from("subscriptions")
         .select("plan_type, is_active")
+        .eq("user_id", userId)
         .single();
       
       if (error) throw error;
       
-      setSubscription({
-        planType: data.plan_type,
-        isActive: data.is_active
-      });
+      if (data) {
+        setSubscription({
+          planType: data.plan_type,
+          isActive: data.is_active
+        });
+      }
     } catch (error) {
       console.error("Error fetching subscription:", error);
     } finally {

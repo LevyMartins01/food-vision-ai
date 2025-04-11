@@ -64,10 +64,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (subscriptionError) throw subscriptionError;
         
-        setSubscription({
-          plan: subscriptionData.plan_type,
-          isActive: subscriptionData.is_active
-        });
+        if (subscriptionData) {
+          setSubscription({
+            plan: subscriptionData.plan_type,
+            isActive: subscriptionData.is_active
+          });
+        }
 
         // Check upload limits
         await refreshUploadCredits();

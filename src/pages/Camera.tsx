@@ -13,7 +13,7 @@ const Camera = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { refreshUploadCredits } = useAuth();
+  const { refreshUploadCredits, user } = useAuth();
   
   const handleImageCapture = async (imageData: string) => {
     setIsAnalyzing(true);
@@ -30,18 +30,27 @@ const Camera = () => {
       
       setAnalysisResult(result);
       
-      // Store the analysis in Supabase
-      await supabase.from("food_uploads").insert({
-        food_name: result.name,
-        calories: result.calories,
-        protein: result.protein,
-        carbs: result.carbs,
-        fat: result.fat,
-        image_url: result.image.substring(0, 255), // Limit URL length for DB
-      });
+      // Store the analysis in Supabase if user is logged in
+      if (user) {
+        try {
+          await supabase.from("food_uploads").insert({
+            user_id: user.id,
+            food_name: result.name,
+            calories: result.calories,
+            protein: result.protein,
+            carbs: result.carbs,
+            fat: result.fat,
+            image_url: result.image.substring(0, 255), // Limit URL length for DB
+          });
+          
+          // Refresh upload credits after successful analysis
+          await refreshUploadCredits();
+        } catch (error) {
+          console.error("Error storing analysis in Supabase:", error);
+          // Continue with local storage even if Supabase storage fails
+        }
+      }
       
-      // Refresh upload credits after successful analysis
-      await refreshUploadCredits();
     } catch (error) {
       console.error("Error analyzing image:", error);
       setError(error instanceof Error ? error.message : "Erro desconhecido na análise");

@@ -20,7 +20,7 @@ export interface FoodAnalysis {
   fat: number;
   image: string;
   servingSize: string;
-  date?: string;
+  date: string; // Changed from Date to string for consistency
 }
 
 const NutritionCard = ({ food, onSave }: NutritionCardProps) => {
