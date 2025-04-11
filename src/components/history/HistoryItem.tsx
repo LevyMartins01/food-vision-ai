@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 interface HistoryItemProps {
   item: FoodAnalysis & { 
     id: string;
-    // date already exists in FoodAnalysis
+    date: string; // This is a string containing an ISO date
   };
 }
 

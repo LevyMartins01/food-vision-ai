@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar, ChevronDown, History as HistoryIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-// Updated to match the FoodAnalysis interface date property type
+// Updated to match the FoodAnalysis interface with date as string type
 interface HistoryItemWithMeta extends FoodAnalysis {
   id: string;
-  // date already exists in FoodAnalysis as string
+  date: string;
 }
 
 const History = () => {

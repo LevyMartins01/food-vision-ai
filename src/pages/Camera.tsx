@@ -33,15 +33,17 @@ const Camera = () => {
       // Store the analysis in Supabase if user is logged in
       if (user) {
         try {
-          await supabase.from("food_uploads").insert({
-            user_id: user.id,
-            food_name: result.name,
-            calories: result.calories,
-            protein: result.protein,
-            carbs: result.carbs,
-            fat: result.fat,
-            image_url: result.image.substring(0, 255), // Limit URL length for DB
-          });
+          await supabase
+            .from("food_uploads")
+            .insert({
+              user_id: user.id,
+              food_name: result.name,
+              calories: result.calories,
+              protein: result.protein,
+              carbs: result.carbs,
+              fat: result.fat,
+              image_url: result.image.substring(0, 255), // Limit URL length for DB
+            });
           
           // Refresh upload credits after successful analysis
           await refreshUploadCredits();

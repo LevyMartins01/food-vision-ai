@@ -1,4 +1,3 @@
-
 import SubscriptionPlans from "@/components/subscription/SubscriptionPlans";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const Subscription = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription] = useState<{
+  const [subscription, setSubscription<{
     planType: string;
     isActive: boolean;
   } | null>(null);
