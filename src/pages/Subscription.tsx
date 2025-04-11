@@ -1,3 +1,4 @@
+
 import SubscriptionPlans from "@/components/subscription/SubscriptionPlans";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -5,13 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Define the subscription type
+interface SubscriptionType {
+  planType: string;
+  isActive: boolean;
+}
+
 const Subscription = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription<{
-    planType: string;
-    isActive: boolean;
-  } | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionType | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
