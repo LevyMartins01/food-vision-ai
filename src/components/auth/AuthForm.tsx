@@ -211,25 +211,29 @@ const AuthForm = () => {
               Cadastre-se
             </button>
           </p>
-        ) : mode === "signup" ? (
-          <p className="text-sm text-foodcam-gray">
-            Já tem uma conta?{" "}
-            <button
-              onClick={() => switchMode("login")}
-              className="text-foodcam-blue hover:underline"
-            >
-              Entre
-            </button>
-          </p>
         ) : (
           <p className="text-sm text-foodcam-gray">
-            Lembrou sua senha?{" "}
-            <button
-              onClick={() => switchMode("login")}
-              className="text-foodcam-blue hover:underline"
-            >
-              Entre
-            </button>
+            {mode === "signup" ? (
+              <>
+                Já tem uma conta?{" "}
+                <button
+                  onClick={() => switchMode("login")}
+                  className="text-foodcam-blue hover:underline"
+                >
+                  Entre
+                </button>
+              </>
+            ) : (
+              <>
+                Lembrou sua senha?{" "}
+                <button
+                  onClick={() => switchMode("login")}
+                  className="text-foodcam-blue hover:underline"
+                >
+                  Entre
+                </button>
+              </>
+            )}
           </p>
         )}
       </div>
