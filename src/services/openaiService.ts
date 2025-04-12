@@ -41,14 +41,14 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
         messages: [
           {
             role: "system",
-            content: "Você é um assistente especializado em análise nutricional de alimentos. Sua tarefa é identificar alimentos em imagens e fornecer detalhes nutricionais precisos. Retorne os dados no formato JSON."
+            content: "Você é um assistente especializado em análise nutricional de alimentos. Sua tarefa é identificar alimentos em imagens e fornecer detalhes nutricionais precisos. Sempre retorne os dados no formato JSON válido, sem incluir formatação adicional ou texto explicativo."
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Diga os nomes dos alimentos que contém na imagem e a quantidade de nutrientes de cada alimento e depois um total de forma organizada. Responda apenas em formato JSON com a seguinte estrutura: {foodName: string, confidence: number, nutrients: {calories: number, protein: number, carbs: number, fat: number}, servingSize: string}"
+                text: "Identifique o alimento nesta imagem e forneça informações nutricionais. Responda APENAS em formato JSON válido com a seguinte estrutura exata, sem texto adicional: {\"foodName\": string, \"confidence\": number, \"nutrients\": {\"calories\": number, \"protein\": number, \"carbs\": number, \"fat\": number}, \"servingSize\": string}"
               },
               {
                 type: "image_url",
@@ -76,7 +76,20 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
     try {
       // Tentativa de extrair o JSON da resposta
       const content = data.choices[0].message.content;
-      analysisResult = JSON.parse(content);
+      console.log("Resposta da OpenAI:", content);
+      
+      // Tenta encontrar um objeto JSON válido na resposta
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        analysisResult = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Formato JSON não encontrado na resposta");
+      }
+      
+      // Verifica se todos os campos necessários estão presentes
+      if (!analysisResult.foodName || !analysisResult.nutrients) {
+        throw new Error("Resposta incompleta da OpenAI");
+      }
     } catch (e) {
       console.error("Erro ao processar resposta da OpenAI:", e);
       throw new Error("Formato de resposta da OpenAI inesperado");
@@ -85,12 +98,12 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
     // Convertendo para o formato FoodAnalysis
     return {
       id: nanoid(),
-      name: analysisResult.foodName,
-      confidence: analysisResult.confidence || 0.9,
-      calories: analysisResult.nutrients.calories,
-      protein: analysisResult.nutrients.protein,
-      carbs: analysisResult.nutrients.carbs,
-      fat: analysisResult.nutrients.fat,
+      name: analysisResult.foodName || "Alimento desconhecido",
+      confidence: analysisResult.confidence || 0.7,
+      calories: analysisResult.nutrients.calories || 0,
+      protein: analysisResult.nutrients.protein || 0,
+      carbs: analysisResult.nutrients.carbs || 0,
+      fat: analysisResult.nutrients.fat || 0,
       servingSize: analysisResult.servingSize || "1 porção (estimada)",
       image: imageBase64,
       date: new Date().toISOString()
