@@ -89,7 +89,7 @@ const Home = () => {
       )}
       
       <div className="text-center text-xs text-foodcam-gray mt-8">
-        © 2024 FoodCam AI • Análise precisa de alimentos
+        © 2025 FoodCam AI • Análise precisa de alimentos
       </div>
     </div>
   );

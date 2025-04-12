@@ -10,7 +10,8 @@ import {
   Shield, 
   User,
   Crown,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  Mail
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -176,6 +177,10 @@ const Profile = () => {
             icon={<HelpCircle className="text-foodcam-blue" />}
             label="Ajuda & Suporte"
             description="Perguntas frequentes, contato"
+            onPress={() => {
+              window.location.href = "mailto:contato@lm7upgrade.com.br";
+            }}
+            extraIcon={<Mail className="h-4 w-4 text-foodcam-gray mr-2" />}
           />
         </div>
         
@@ -202,6 +207,8 @@ interface ProfileMenuItemProps {
   description: string;
   isToggle?: boolean;
   toggled?: boolean;
+  onPress?: () => void;
+  extraIcon?: React.ReactNode;
 }
 
 const ProfileMenuItem = ({ 
@@ -209,16 +216,23 @@ const ProfileMenuItem = ({
   label, 
   description, 
   isToggle = false,
-  toggled = false
+  toggled = false,
+  onPress,
+  extraIcon
 }: ProfileMenuItemProps) => (
-  <div className="flex items-center justify-between p-4 hover:bg-foodcam-darker/50 transition-colors border-b border-white/5 last:border-0">
+  <div 
+    className="flex items-center justify-between p-4 hover:bg-foodcam-darker/50 transition-colors border-b border-white/5 last:border-0 cursor-pointer"
+    onClick={onPress}
+  >
     <div className="flex items-center gap-3">
       <div className="h-10 w-10 rounded-full flex items-center justify-center bg-foodcam-darker">
         {icon}
       </div>
       <div>
         <div className="font-medium">{label}</div>
-        <div className="text-foodcam-gray text-sm">{description}</div>
+        <div className="text-foodcam-gray text-sm flex items-center">
+          {extraIcon}{description}
+        </div>
       </div>
     </div>
     {isToggle ? (
