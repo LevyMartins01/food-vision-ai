@@ -23,6 +23,20 @@ const Auth = () => {
       }
     });
 
+    // Handle any errors from URL (like expired email links)
+    const handleUrlErrors = () => {
+      const urlParams = new URLSearchParams(window.location.hash.substring(1));
+      const error = urlParams.get('error');
+      const errorCode = urlParams.get('error_code');
+      
+      if (error && errorCode === 'otp_expired') {
+        // Clear the URL to remove the error
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    };
+    
+    handleUrlErrors();
+
     // Clean up subscription on unmount
     return () => {
       data.subscription.unsubscribe();

@@ -75,7 +75,15 @@ const SubscriptionPlans = () => {
       setIsLoading(true);
       setLoadingPlan(planType);
 
-      // Call the Supabase Edge Function to create a checkout session
+      // For testing, we'll use direct Stripe links as provided
+      if (planType === "monthly") {
+        window.location.href = "https://buy.stripe.com/test_aEU5ku0pP8IPaLmeUY";
+      } else {
+        window.location.href = "https://buy.stripe.com/test_dR600a7Sh1gn3iU5kn";
+      }
+      
+      // Once edge function is properly set up, use this instead:
+      /*
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planType },
       });
@@ -84,12 +92,12 @@ const SubscriptionPlans = () => {
         throw new Error(error.message);
       }
 
-      // Redirect to Stripe Checkout
       if (data?.url) {
         window.location.href = data.url;
       } else {
         throw new Error('Falha ao obter o link de pagamento');
       }
+      */
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
       toast.error(error.message || 'Erro ao processar pagamento');

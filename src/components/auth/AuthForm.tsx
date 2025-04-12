@@ -13,7 +13,7 @@ const AuthForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>("signup"); // Default to signup
   const [isLoading, setIsLoading] = useState(false);
 
   const switchMode = (newMode: AuthMode) => {
@@ -49,6 +49,8 @@ const AuthForm = () => {
 
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Verifique seu email.");
+        // Switch to login mode after successful signup
+        switchMode("login");
       } else if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
           email,
