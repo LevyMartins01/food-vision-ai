@@ -75,14 +75,14 @@ const SubscriptionPlans = () => {
       setIsLoading(true);
       setLoadingPlan(planType);
 
-      // For testing, we'll use direct Stripe links as provided
+      // Using Stripe payment links provided by the user
       if (planType === "monthly") {
-        window.location.href = "https://buy.stripe.com/test_aEU5ku0pP8IPaLmeUY";
+        window.location.href = import.meta.env.VITE_STRIPE_MONTHLY_LINK || "https://buy.stripe.com/test_aEU5ku0pP8IPaLmeUY";
       } else {
-        window.location.href = "https://buy.stripe.com/test_dR600a7Sh1gn3iU5kn";
+        window.location.href = import.meta.env.VITE_STRIPE_ANNUAL_LINK || "https://buy.stripe.com/test_dR600a7Sh1gn3iU5kn";
       }
       
-      // Once edge function is properly set up, use this instead:
+      // Once edge function is properly set up and configured with the Stripe secret key, use this instead:
       /*
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planType },
@@ -142,7 +142,7 @@ const SubscriptionPlans = () => {
           onSelect={handleSelectPlan}
           features={[
             "Tudo do plano mensal",
-            "2 meses grátis",
+            "$4,17 fica ao mês",
             "Exportação de dados",
             "Análises em lote (em breve)"
           ]}
