@@ -119,7 +119,7 @@ const SubscriptionPlans = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <Plan
           title="Mensal"
-          price="R$8"
+          price="$8"
           period="/mês"
           planType="monthly"
           isLoading={isLoading && loadingPlan === "monthly"}
@@ -134,7 +134,7 @@ const SubscriptionPlans = () => {
         
         <Plan
           title="Anual"
-          price="R$50"
+          price="$50"
           period="/ano"
           planType="annual"
           isPopular

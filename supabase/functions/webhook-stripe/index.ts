@@ -51,21 +51,25 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        const { user_id, plan_type } = session.metadata;
+        const { user_id, plan_type } = session.metadata || {};
+        
+        if (user_id) {
+          // Update user's subscription in the database
+          await supabase
+            .from("subscriptions")
+            .update({
+              stripe_subscription_id: session.subscription,
+              plan_type: plan_type || "monthly", // Default to monthly if not specified
+              is_active: true,
+              start_date: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", user_id);
 
-        // Update user's subscription in the database
-        await supabase
-          .from("subscriptions")
-          .update({
-            stripe_subscription_id: session.subscription,
-            plan_type,
-            is_active: true,
-            start_date: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", user_id);
-
-        console.log(`Updated subscription for user ${user_id} to ${plan_type}`);
+          console.log(`Updated subscription for user ${user_id} to ${plan_type || "monthly"}`);
+        } else {
+          console.log("No user_id found in session metadata");
+        }
         break;
       }
       
@@ -119,6 +123,35 @@ serve(async (req) => {
             .eq("user_id", userData.user_id);
             
           console.log(`Reset subscription to free plan for user ${userData.user_id}`);
+        }
+        break;
+      }
+
+      case "payment_intent.succeeded": {
+        // In case of direct payment (non-subscription), update the user's status
+        const paymentIntent = event.data.object;
+        const customerId = paymentIntent.customer;
+        
+        if (customerId) {
+          // Find user associated with this customer
+          const { data: userData } = await supabase
+            .from("subscriptions")
+            .select("user_id")
+            .eq("stripe_customer_id", customerId)
+            .single();
+            
+          if (userData) {
+            // Activate the user's subscription
+            await supabase
+              .from("subscriptions")
+              .update({
+                is_active: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq("user_id", userData.user_id);
+              
+            console.log(`Payment succeeded for user ${userData.user_id}`);
+          }
         }
         break;
       }

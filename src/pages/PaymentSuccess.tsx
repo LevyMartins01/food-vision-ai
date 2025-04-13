@@ -3,19 +3,34 @@ import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const PaymentSuccess = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { refreshUploadCredits } = useAuth();
 
   useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    const verifySubscription = async () => {
+      try {
+        // Refresh user's upload credits to reflect new subscription status
+        await refreshUploadCredits();
+        
+        // Success notification
+        toast.success("Assinatura ativada com sucesso!");
+        
+        // Hide loader after verification
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error verifying subscription:", error);
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
+    // Start verification process
+    verifySubscription();
+  }, [refreshUploadCredits]);
 
   return (
     <div className="py-12 px-4 max-w-md mx-auto text-center">

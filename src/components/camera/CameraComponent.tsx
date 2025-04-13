@@ -4,7 +4,7 @@ import { Camera, Image, Upload, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface CameraComponentProps {
   onImageCapture: (imageData: string) => void;
@@ -14,28 +14,29 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadCredits, user } = useAuth();
+  const navigate = useNavigate();
 
   const handleCameraClick = () => {
-    // If user is not logged in, show message
+    // If user is not logged in, show message and redirect to auth
     if (!user) {
       toast.error("Faça login para analisar alimentos", {
         action: {
           label: "Entrar",
           onClick: () => {
-            window.location.href = "/auth";
+            navigate("/auth");
           },
         },
       });
       return;
     }
 
-    // If user has no upload credits left, show upgrade message
+    // If user has no upload credits left, show upgrade message and redirect to subscription
     if (uploadCredits && !uploadCredits.canUpload && !uploadCredits.isPaidUser) {
       toast.error("Você atingiu o limite de 2 análises diárias", {
         action: {
           label: "Fazer upgrade",
           onClick: () => {
-            window.location.href = "/subscription";
+            navigate("/subscription");
           },
         },
       });
@@ -69,7 +70,7 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
     reader.readAsDataURL(file);
   };
 
-  // If user has reached upload limit, show premium message
+  // If user has reached upload limit, show premium message and redirect button
   if (uploadCredits && !uploadCredits.canUpload && !uploadCredits.isPaidUser) {
     return (
       <div className="flex flex-col items-center justify-center py-10">
