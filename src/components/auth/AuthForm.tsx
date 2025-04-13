@@ -11,7 +11,8 @@ const AuthForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [mode, setMode] = useState<AuthMode>("signup"); // Default to signup
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,7 +42,9 @@ const AuthForm = () => {
           password,
           options: {
             data: {
-              full_name: name,
+              first_name: firstName,
+              last_name: lastName,
+              full_name: `${firstName} ${lastName}`.trim(),
             },
           },
         });
@@ -96,11 +99,13 @@ const AuthForm = () => {
           setEmail={setEmail}
           setPassword={setPassword}
           setConfirmPassword={setConfirmPassword}
-          setName={setName}
+          setFirstName={setFirstName}
+          setLastName={setLastName}
           email={email}
           password={password}
           confirmPassword={confirmPassword}
-          name={name}
+          firstName={firstName}
+          lastName={lastName}
           switchToLogin={() => switchMode("login")}
         />
       )}

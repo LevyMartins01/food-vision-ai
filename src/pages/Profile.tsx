@@ -11,9 +11,10 @@ import {
   User,
   Crown,
   ChevronRight as ChevronRightIcon,
-  Mail
+  Mail,
+  FileText
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 
 const Profile = () => {
   const { user, signOut, subscription } = useAuth();
+  const navigate = useNavigate();
   const [userStats, setUserStats] = useState({
     uploads: 0,
     totalCalories: 0,
@@ -84,6 +86,11 @@ const Profile = () => {
 
   const isPremiumUser = subscription && subscription.isActive && ["monthly", "annual"].includes(subscription.plan);
 
+  const fullName = user?.user_metadata?.full_name || 
+                  (user?.user_metadata?.first_name && user?.user_metadata?.last_name ? 
+                    `${user.user_metadata.first_name} ${user.user_metadata.last_name}` : 
+                    user?.email?.split('@')[0] || "Usuário");
+
   return (
     <div className="pb-8">
       <div className="flex items-center gap-4 mb-8">
@@ -93,7 +100,7 @@ const Profile = () => {
           </div>
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Seu Perfil</h1>
+          <h1 className="text-2xl font-bold">{fullName}</h1>
           <p className="text-foodcam-gray">{user?.email}</p>
           {isPremiumUser && (
             <div className="flex items-center mt-1 text-amber-400">
@@ -147,6 +154,9 @@ const Profile = () => {
             icon={<Bell className="text-foodcam-blue" />}
             label="Notificações"
             description="Gerenciar alertas e lembretes"
+            onPress={() => {
+              toast.info("Configurações de notificações serão adicionadas em breve");
+            }}
           />
           <ProfileMenuItem 
             icon={<Moon className="text-foodcam-blue" />}
@@ -159,6 +169,9 @@ const Profile = () => {
             icon={<Settings className="text-foodcam-blue" />}
             label="Configurações"
             description="Idioma, unidades, privacidade"
+            onPress={() => {
+              toast.info("Configurações avançadas serão adicionadas em breve");
+            }}
           />
         </div>
         
@@ -167,11 +180,21 @@ const Profile = () => {
             icon={<Share2 className="text-foodcam-blue" />}
             label="Compartilhar"
             description="Convide amigos para o app"
+            onPress={() => {
+              toast.info("Funcionalidade de compartilhamento será adicionada em breve");
+            }}
           />
           <ProfileMenuItem 
             icon={<Shield className="text-foodcam-blue" />}
             label="Política de Privacidade"
             description="Como seus dados são utilizados"
+            onPress={() => navigate("/privacy-policy")}
+          />
+          <ProfileMenuItem 
+            icon={<FileText className="text-foodcam-blue" />}
+            label="Termos de Serviço"
+            description="Regras de uso do aplicativo"
+            onPress={() => navigate("/terms-of-service")}
           />
           <ProfileMenuItem 
             icon={<HelpCircle className="text-foodcam-blue" />}

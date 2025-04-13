@@ -14,6 +14,8 @@ import Auth from "./pages/Auth";
 import Subscription from "./pages/Subscription";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -83,6 +85,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PaymentCanceled />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/privacy-policy" 
+        element={
+          <ProtectedRoute>
+            <PrivacyPolicy />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/terms-of-service" 
+        element={
+          <ProtectedRoute>
+            <TermsOfService />
           </ProtectedRoute>
         } 
       />

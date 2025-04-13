@@ -9,11 +9,13 @@ interface SignupFormProps extends AuthFormBaseProps {
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   setConfirmPassword: (confirmPassword: string) => void;
-  setName: (name: string) => void;
+  setFirstName: (firstName: string) => void;
+  setLastName: (lastName: string) => void;
   email: string;
   password: string;
   confirmPassword: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   switchToLogin: () => void;
 }
 
@@ -23,11 +25,13 @@ const SignupForm = ({
   setEmail,
   setPassword,
   setConfirmPassword,
-  setName,
+  setFirstName,
+  setLastName,
   email,
   password,
   confirmPassword,
-  name,
+  firstName,
+  lastName,
   switchToLogin,
 }: SignupFormProps) => {
   return (
@@ -40,21 +44,40 @@ const SignupForm = ({
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="name" className="block text-sm font-medium">
-            Nome completo
-          </label>
-          <div className="relative">
-            <User className="absolute left-3 top-3 h-4 w-4 text-foodcam-gray" />
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="pl-10"
-              placeholder="Seu nome completo"
-              required
-            />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label htmlFor="firstName" className="block text-sm font-medium">
+              Nome
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-3 h-4 w-4 text-foodcam-gray" />
+              <Input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="pl-10"
+                placeholder="Seu nome"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="lastName" className="block text-sm font-medium">
+              Sobrenome
+            </label>
+            <div className="relative">
+              <Input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className=""
+                placeholder="Seu sobrenome"
+                required
+              />
+            </div>
           </div>
         </div>
 
