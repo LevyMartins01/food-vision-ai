@@ -153,6 +153,7 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
       
       <div className="text-center text-foodcam-gray text-sm">
         <p>Melhor resultado com um único alimento por imagem</p>
+        {isLoading && <p className="mt-2">Carregando imagem...</p>}
       </div>
     </div>
   );

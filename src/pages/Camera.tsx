@@ -8,29 +8,43 @@ import { toast } from "sonner";
 import { analyzeImageWithOpenAI } from "@/services/openaiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 const Camera = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
   const { refreshUploadCredits, user } = useAuth();
+  
+  useEffect(() => {
+    // Verificar se a chave da API está definida
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    if (!apiKey) {
+      setApiKeyMissing(true);
+    } else {
+      setApiKeyMissing(false);
+    }
+  }, []);
   
   const handleImageCapture = async (imageData: string) => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
-      // Verify if OpenAI API key exists
-      if (!import.meta.env.VITE_OPENAI_API_KEY) {
+      // Verificar se a chave da API da OpenAI existe
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
         throw new Error("API key da OpenAI não configurada. Por favor, adicione a chave no arquivo .env");
       }
       
-      // Analyze the image with OpenAI API
+      // Analisar a imagem com a API da OpenAI
       const result = await analyzeImageWithOpenAI(imageData);
       
       setAnalysisResult(result);
       
-      // Store the analysis in Supabase if user is logged in
+      // Armazenar a análise no Supabase se o usuário estiver logado
       if (user) {
         try {
           await supabase
@@ -42,19 +56,19 @@ const Camera = () => {
               protein: result.protein,
               carbs: result.carbs,
               fat: result.fat,
-              image_url: result.image.substring(0, 255), // Limit URL length for DB
+              image_url: result.image.substring(0, 255), // Limitar o comprimento da URL para o banco de dados
             });
           
-          // Refresh upload credits after successful analysis
+          // Atualizar créditos de upload após análise bem-sucedida
           await refreshUploadCredits();
         } catch (error) {
-          console.error("Error storing analysis in Supabase:", error);
-          // Continue with local storage even if Supabase storage fails
+          console.error("Erro ao armazenar análise no Supabase:", error);
+          // Continuar com armazenamento local mesmo se o armazenamento no Supabase falhar
         }
       }
       
     } catch (error) {
-      console.error("Error analyzing image:", error);
+      console.error("Erro ao analisar imagem:", error);
       setError(error instanceof Error ? error.message : "Erro desconhecido na análise");
       toast.error("Não foi possível analisar a imagem. Por favor, tente novamente.");
     } finally {
@@ -65,7 +79,7 @@ const Camera = () => {
   const handleSaveAnalysis = () => {
     if (!analysisResult) return;
     
-    // Save to localStorage
+    // Salvar no localStorage
     const savedItems = JSON.parse(localStorage.getItem("foodcam-history") || "[]");
     
     const newItem = {
@@ -84,6 +98,20 @@ const Camera = () => {
     setAnalysisResult(null);
     setError(null);
   };
+
+  if (apiKeyMissing) {
+    return (
+      <div className="mb-8">
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Chave da API não configurada</AlertTitle>
+          <AlertDescription>
+            A chave da API da OpenAI não está configurada. É necessário configurar a chave no arquivo .env para usar o recurso de análise de alimentos.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-8">

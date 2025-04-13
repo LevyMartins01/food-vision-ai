@@ -30,6 +30,10 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
       ? imageBase64.split('base64,')[1] 
       : imageBase64;
     
+    // Log para depuração - não inclui a chave completa
+    console.log("Iniciando chamada à API da OpenAI");
+    console.log("API Key configurada:", apiKey ? "Sim (não exibida por segurança)" : "Não");
+    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -64,8 +68,9 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Erro na API da OpenAI: ${response.status} ${errorText}`);
+      const errorData = await response.json();
+      console.error("Erro na resposta da OpenAI:", errorData);
+      throw new Error(`Erro na API da OpenAI: ${response.status} ${JSON.stringify(errorData)}`);
     }
     
     const data = await response.json();
