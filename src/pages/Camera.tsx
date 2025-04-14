@@ -9,7 +9,8 @@ import { analyzeImageWithOpenAI } from "@/services/openaiService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const Camera = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -21,11 +22,8 @@ const Camera = () => {
   useEffect(() => {
     // Verificar se a chave da API está definida
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!apiKey) {
-      setApiKeyMissing(true);
-    } else {
-      setApiKeyMissing(false);
-    }
+    console.log("Chave API configurada:", apiKey ? "Sim" : "Não");
+    setApiKeyMissing(!apiKey);
   }, []);
   
   const handleImageCapture = async (imageData: string) => {
@@ -47,6 +45,10 @@ const Camera = () => {
       // Armazenar a análise no Supabase se o usuário estiver logado
       if (user) {
         try {
+          // Armazenar apenas uma URL curta ou identificador no banco de dados
+          // em vez da imagem base64 completa
+          const truncatedImage = imageData.substring(0, 100) + "...";
+          
           await supabase
             .from("food_uploads")
             .insert({
@@ -56,20 +58,36 @@ const Camera = () => {
               protein: result.protein,
               carbs: result.carbs,
               fat: result.fat,
-              image_url: result.image.substring(0, 255), // Limitar o comprimento da URL para o banco de dados
+              image_url: truncatedImage, // Versão truncada da imagem
             });
           
           // Atualizar créditos de upload após análise bem-sucedida
           await refreshUploadCredits();
         } catch (error) {
           console.error("Erro ao armazenar análise no Supabase:", error);
+          toast.error("Análise realizada com sucesso, mas houve um erro ao salvá-la no histórico online.");
           // Continuar com armazenamento local mesmo se o armazenamento no Supabase falhar
         }
       }
       
     } catch (error) {
       console.error("Erro ao analisar imagem:", error);
-      setError(error instanceof Error ? error.message : "Erro desconhecido na análise");
+      let errorMessage = "Erro desconhecido na análise";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Adicionar instruções mais claras para erros comuns
+        if (errorMessage.includes("API key") || errorMessage.includes("authentication")) {
+          errorMessage = "Erro de autenticação com a API da OpenAI. Verifique se a chave API está configurada corretamente.";
+        } else if (errorMessage.includes("429")) {
+          errorMessage = "Limite de requisições da API da OpenAI atingido. Aguarde um momento e tente novamente.";
+        } else if (errorMessage.includes("grande")) {
+          errorMessage = "A imagem é muito grande. Tente uma imagem menor ou com resolução reduzida.";
+        }
+      }
+      
+      setError(errorMessage);
       toast.error("Não foi possível analisar a imagem. Por favor, tente novamente.");
     } finally {
       setIsAnalyzing(false);
@@ -106,9 +124,23 @@ const Camera = () => {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Chave da API não configurada</AlertTitle>
           <AlertDescription>
-            A chave da API da OpenAI não está configurada. É necessário configurar a chave no arquivo .env para usar o recurso de análise de alimentos.
+            A chave da API da OpenAI não está configurada ou é inválida. É necessário adicionar uma chave válida no arquivo .env para usar o recurso de análise de alimentos.
           </AlertDescription>
         </Alert>
+        
+        <Card className="p-4 mt-4">
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-foodcam-blue mt-0.5 mr-2" />
+            <div>
+              <h3 className="text-lg font-medium">Como configurar a chave da API</h3>
+              <ol className="mt-2 ml-5 list-decimal text-sm">
+                <li className="mb-1">Obtenha uma chave da API da OpenAI em <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-foodcam-blue underline">platform.openai.com</a></li>
+                <li className="mb-1">Adicione a chave no arquivo .env do projeto</li>
+                <li className="mb-1">Reinicie o aplicativo</li>
+              </ol>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
