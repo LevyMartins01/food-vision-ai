@@ -55,7 +55,7 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
       reader.readAsDataURL(file);
       
       reader.onload = (event) => {
-        const img = new Image();
+        const img = new window.Image();
         img.src = event.target?.result as string;
         
         img.onload = () => {
@@ -240,3 +240,4 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
 };
 
 export default CameraComponent;
+
