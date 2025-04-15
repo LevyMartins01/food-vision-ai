@@ -19,13 +19,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // --- ADICIONE ESTA SEÇÃO 'preview' AQUI ---
+  // --- MODIFIQUE A SEÇÃO 'preview' AQUI ---
   preview: {
     allowedHosts: [
-      'cloud-test-nodejs.r4loq5.easypanel.host' // Host necessário para o EasyPanel
+      'cloud-test-nodejs.r4loq5.easypanel.host', // Mantenha o host anterior do EasyPanel
+      'foodcamai.com',                          // <<< ADICIONE SEU DOMÍNIO AQUI
+      'www.foodcamai.com'                       // <<< ADICIONE O WWW TAMBÉM (BOA PRÁTICA)
     ]
     // Não precisa definir host/port aqui, pois o Procfile já faz isso.
     // Apenas allowedHosts é crucial para corrigir o erro.
   }
-  // --- FIM DA SEÇÃO ADICIONADA ---
+  // --- FIM DA SEÇÃO MODIFICADA ---
 }));
