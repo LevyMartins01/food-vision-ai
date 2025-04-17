@@ -232,4 +232,21 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 *   **Políticas de CORS:** Configure corretamente os cabeçalhos CORS nas suas Edge Functions do Supabase para permitir requisições apenas do seu domínio frontend.
 *   **Atualizações de Dependência:** Mantenha as dependências do projeto (NPM) atualizadas regularmente para corrigir vulnerabilidades de segurança.
 
+## 12. Funcionalidades Planejadas (Roadmap - Maioria Premium)
+
+A seguir estão funcionalidades planejadas para futuras versões, a maioria das quais será exclusiva para assinantes Premium:
+
+*   **Histórico Aprimorado (Premium):**
+    *   **Busca e Filtro:** Permitir pesquisar o histórico por nome do alimento, intervalo de datas ou faixa de calorias.
+    *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
+*   **Metas e Acompanhamento (Premium):**
+    *   **Definição de Metas:** Permitir ao usuário definir metas personalizadas (diárias, semanais) de calorias, macronutrientes (proteína, carboidratos, gorduras) com base em objetivos (perder peso, manter, ganhar massa).
+    *   **Monitoramento:** Exibir o progresso do dia atual em relação às metas definidas, utilizando os dados das análises realizadas.
+*   **Plano Alimentar AI (Premium):**
+    *   **Formulário de Perfil:** Coletar informações do usuário (objetivos, restrições, preferências básicas, nível de atividade).
+    *   **Geração por IA:** Utilizar um modelo de linguagem da OpenAI para gerar sugestões de planos alimentares personalizados com base no formulário preenchido.
+*   **Melhorias Gerais de UX:**
+    *   Otimização contínua da performance.
+    *   Refinamento do feedback visual durante operações assíncronas.
+
 Esta documentação deve fornecer uma boa base para entender e gerenciar o projeto FoodCam AI. Lembre-se de mantê-la atualizada conforme o projeto evolui. 
