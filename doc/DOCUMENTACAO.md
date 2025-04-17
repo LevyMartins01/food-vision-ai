@@ -237,8 +237,12 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 A seguir estão funcionalidades planejadas para futuras versões, a maioria das quais será exclusiva para assinantes Premium:
 
 *   **Histórico Aprimorado (Premium):**
-    *   **Busca e Filtro:** Permitir pesquisar o histórico por nome do alimento, intervalo de datas ou faixa de calorias.
-    *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
+        *   **Busca e Filtro:** 
+            *   Implementada busca por nome do alimento para usuários Premium, com debounce para performance.
+            *   Interface de busca visível apenas para Premium.
+            *   Usuários não-premium veem uma mensagem de upgrade.
+            *   Filtros avançados (data, calorias) planejados para o futuro.
+        *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
 *   **Metas e Acompanhamento (Premium):**
     *   **Definição de Metas:** Permitir ao usuário definir metas personalizadas (diárias, semanais) de calorias, macronutrientes (proteína, carboidratos, gorduras) com base em objetivos (perder peso, manter, ganhar massa).
     *   **Monitoramento:** Exibir o progresso do dia atual em relação às metas definidas, utilizando os dados das análises realizadas.
@@ -248,5 +252,6 @@ A seguir estão funcionalidades planejadas para futuras versões, a maioria das 
 *   **Melhorias Gerais de UX:**
     *   Otimização contínua da performance.
     *   Refinamento do feedback visual durante operações assíncronas.
+*   **Paywall Básico:** Implementada lógica inicial para diferenciar conteúdo/funcionalidade entre usuários gratuitos e premium (ex: busca no histórico).
 
 Esta documentação deve fornecer uma boa base para entender e gerenciar o projeto FoodCam AI. Lembre-se de mantê-la atualizada conforme o projeto evolui. 
