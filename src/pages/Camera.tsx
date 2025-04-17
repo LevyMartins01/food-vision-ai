@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import CameraComponent from "@/components/camera/CameraComponent";
 import { nanoid } from "nanoid";
@@ -27,70 +26,89 @@ const Camera = () => {
   }, []);
   
   const handleImageCapture = async (imageData: string) => {
+    console.log("[Camera.tsx] handleImageCapture iniciada.");
+    
+    if (isAnalyzing) {
+      console.warn("[Camera.tsx] Tentativa de iniciar análise enquanto outra já está em andamento.");
+      return;
+    }
+    
     setIsAnalyzing(true);
     setError(null);
+    setAnalysisResult(null);
+    console.log("[Camera.tsx] Estado atualizado: isAnalyzing=true, error=null, analysisResult=null");
     
     try {
-      // Verificar se a chave da API da OpenAI existe
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      console.log("[Camera.tsx] Verificando chave API no frontend...");
+      
       if (!apiKey) {
+        console.error("[Camera.tsx] ERRO: Chave API da OpenAI não encontrada no frontend (import.meta.env.VITE_OPENAI_API_KEY).");
         throw new Error("API key da OpenAI não configurada. Por favor, adicione a chave no arquivo .env");
       }
+      const apiKeyPreview = `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}`;
+      console.log(`[Camera.tsx] Chave API encontrada no frontend (prévia): ${apiKeyPreview}`);
+
+      console.log("[Camera.tsx] Chamando analyzeImageWithOpenAI...");
+      const analysisDataFromAPI = await analyzeImageWithOpenAI(imageData);
+      console.log("[Camera.tsx] analyzeImageWithOpenAI retornou com sucesso:", analysisDataFromAPI);
+
+      // COMBINAR o resultado da API com a imagem original
+      const completeAnalysisResult: FoodAnalysis = {
+        ...analysisDataFromAPI, // Dados da API (name, calories, etc.)
+        image: imageData,       // Adiciona a imagem base64 original
+        // Adicionar valores padrão para campos que podem não vir da API se necessário
+        confidence: analysisDataFromAPI.confidence || 0.8, // Exemplo de valor padrão
+        servingSize: analysisDataFromAPI.servingSize || "1 porção (estimada)", // Exemplo
+        date: new Date().toISOString(), // Adicionar data atual
+        id: nanoid() // Gerar um ID único para o resultado
+      };
       
-      // Analisar a imagem com a API da OpenAI
-      const result = await analyzeImageWithOpenAI(imageData);
-      
-      setAnalysisResult(result);
+      setAnalysisResult(completeAnalysisResult); // Usar o objeto completo
+      console.log("[Camera.tsx] Estado atualizado com resultado COMPLETO da análise (incluindo imagem).");
       
       // Armazenar a análise no Supabase se o usuário estiver logado
       if (user) {
+        console.log("[Camera.tsx] Usuário logado. Tentando salvar no Supabase...");
         try {
-          // Armazenar apenas uma URL curta ou identificador no banco de dados
-          // em vez da imagem base64 completa
           const truncatedImage = imageData.substring(0, 100) + "...";
           
           await supabase
             .from("food_uploads")
             .insert({
               user_id: user.id,
-              food_name: result.name,
-              calories: result.calories,
-              protein: result.protein,
-              carbs: result.carbs,
-              fat: result.fat,
-              image_url: truncatedImage, // Versão truncada da imagem
+              food_name: completeAnalysisResult.name,
+              calories: completeAnalysisResult.calories,
+              protein: completeAnalysisResult.protein,
+              carbs: completeAnalysisResult.carbs,
+              fat: completeAnalysisResult.fat,
+              image_url: truncatedImage, // Armazenar versão truncada
             });
           
-          // Atualizar créditos de upload após análise bem-sucedida
           await refreshUploadCredits();
-        } catch (error) {
-          console.error("Erro ao armazenar análise no Supabase:", error);
-          toast.error("Análise realizada com sucesso, mas houve um erro ao salvá-la no histórico online.");
-          // Continuar com armazenamento local mesmo se o armazenamento no Supabase falhar
+          console.log("[Camera.tsx] Análise salva no Supabase com sucesso.");
+        } catch (dbError) {
+          console.error("[Camera.tsx] ERRO ao salvar no Supabase:", dbError);
+          toast.error("Análise realizada, mas erro ao salvar no histórico online.");
         }
+      } else {
+        console.log("[Camera.tsx] Usuário não logado. Análise não será salva no Supabase.");
       }
       
-    } catch (error) {
-      console.error("Erro ao analisar imagem:", error);
+    } catch (analysisError) {
+      console.error("[Camera.tsx] ERRO CAPTURADO durante a análise:", analysisError);
       let errorMessage = "Erro desconhecido na análise";
       
-      if (error instanceof Error) {
-        errorMessage = error.message;
-        
-        // Adicionar instruções mais claras para erros comuns
-        if (errorMessage.includes("API key") || errorMessage.includes("authentication")) {
-          errorMessage = "Erro de autenticação com a API da OpenAI. Verifique se a chave API está configurada corretamente.";
-        } else if (errorMessage.includes("429")) {
-          errorMessage = "Limite de requisições da API da OpenAI atingido. Aguarde um momento e tente novamente.";
-        } else if (errorMessage.includes("grande")) {
-          errorMessage = "A imagem é muito grande. Tente uma imagem menor ou com resolução reduzida.";
-        }
+      if (analysisError instanceof Error) {
+        errorMessage = analysisError.message;
+        console.log(`[Camera.tsx] Mensagem de erro processada: ${errorMessage}`);
       }
       
       setError(errorMessage);
       toast.error("Não foi possível analisar a imagem. Por favor, tente novamente.");
     } finally {
       setIsAnalyzing(false);
+      console.log("[Camera.tsx] Finalizando handleImageCapture. Estado: isAnalyzing=false");
     }
   };
   

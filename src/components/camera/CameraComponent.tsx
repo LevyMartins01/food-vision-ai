@@ -56,6 +56,8 @@ const CameraComponent = ({ onImageCapture }: CameraComponentProps) => {
       // Process and validate the image
       const imageData = await processImageFile(file);
       
+      console.log(`[CameraComponent] processImageFile retornou. Chamando onImageCapture (handleImageCapture em Camera.tsx)...`);
+      
       // Analyze the image
       onImageCapture(imageData);
     } catch (error) {
