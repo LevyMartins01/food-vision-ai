@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   Bell, 
@@ -12,7 +11,8 @@ import {
   Crown,
   ChevronRight as ChevronRightIcon,
   Mail,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,11 +28,17 @@ const Profile = () => {
     totalCalories: 0,
     totalProtein: 0
   });
+  const [statsLoading, setStatsLoading] = useState(true);
   
   useEffect(() => {
     const fetchUserStats = async () => {
-      if (!user) return;
-      
+      if (!user) {
+        setStatsLoading(false);
+        return;
+      }
+      setStatsLoading(true);
+      console.log("[Profile] fetchUserStats: Iniciando busca para usuário:", user.id);
+
       try {
         // Get total uploads count
         const { count, error: countError } = await supabase
@@ -41,6 +47,8 @@ const Profile = () => {
           .eq("user_id", user.id);
           
         if (countError) throw countError;
+        
+        console.log(`[Profile] fetchUserStats: Total de uploads encontrados: ${count}`);
         
         // Get nutritional totals
         const { data: nutritionData, error: nutritionError } = await supabase
@@ -52,13 +60,29 @@ const Profile = () => {
         
         if (nutritionError) throw nutritionError;
         
+        // Log dos dados recebidos
+        console.log("[Profile] fetchUserStats: Dados nutricionais recebidos (nutritionData):", nutritionData);
+        
         // Calculate totals
         let totalCalories = 0;
         let totalProtein = 0;
         
         if (nutritionData && nutritionData.length > 0) {
-          totalCalories = nutritionData.reduce((sum, item) => sum + (item.calories || 0), 0);
-          totalProtein = nutritionData.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
+          console.log(`[Profile] fetchUserStats: Calculando totais para ${nutritionData.length} registros.`);
+          totalCalories = nutritionData.reduce((sum, item) => {
+            // Log de cada item de caloria
+            // console.log(`[Profile] Calculando calorias: item.calories=${item.calories}, sum=${sum}`);
+            return sum + (item.calories || 0);
+          }, 0);
+          totalProtein = nutritionData.reduce((sum, item) => {
+            // Log de cada item de proteína
+            const proteinValue = Number(item.protein) || 0;
+            console.log(`[Profile] Calculando proteína: item.protein=${item.protein}, proteinValue=${proteinValue}, sum=${sum}`);
+            return sum + proteinValue;
+          }, 0);
+          console.log(`[Profile] fetchUserStats: Totais calculados - Calories: ${totalCalories}, Protein: ${totalProtein}`);
+        } else {
+          console.log("[Profile] fetchUserStats: Nenhum dado nutricional encontrado para calcular totais.");
         }
         
         setUserStats({
@@ -66,8 +90,11 @@ const Profile = () => {
           totalCalories,
           totalProtein: Math.round(totalProtein)
         });
+        console.log("[Profile] fetchUserStats: Estado userStats atualizado.");
       } catch (error) {
-        console.error("Error fetching user stats:", error);
+        console.error("[Profile] fetchUserStats: Erro ao buscar estatísticas:", error);
+      } finally {
+        setStatsLoading(false);
       }
     };
     
@@ -113,22 +140,28 @@ const Profile = () => {
         </div>
       </div>
       
-      <div className="glass-card p-5 mb-6">
-        <h2 className="text-lg font-bold mb-4">Resumo Diário</h2>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold">{userStats.uploads}</div>
-            <div className="text-foodcam-gray text-sm">Refeições</div>
+      <div className="glass-card p-5 mb-6 min-h-[100px]">
+        <h2 className="text-lg font-bold mb-4">Resumo</h2>
+        {statsLoading ? (
+          <div className="flex justify-center items-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-foodcam-blue" />
           </div>
-          <div>
-            <div className="text-2xl font-bold">{userStats.totalCalories}</div>
-            <div className="text-foodcam-gray text-sm">Calorias</div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold">{userStats.uploads}</div>
+              <div className="text-foodcam-gray text-sm">Refeições</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{userStats.totalCalories}</div>
+              <div className="text-foodcam-gray text-sm">Calorias</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{userStats.totalProtein}g</div>
+              <div className="text-foodcam-gray text-sm">Proteína</div>
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold">{userStats.totalProtein}g</div>
-            <div className="text-foodcam-gray text-sm">Proteína</div>
-          </div>
-        </div>
+        )}
       </div>
       
       <div className="space-y-4">

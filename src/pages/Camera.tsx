@@ -71,8 +71,6 @@ const Camera = () => {
       if (user) {
         console.log("[Camera.tsx] Usuário logado. Tentando salvar no Supabase...");
         try {
-          const truncatedImage = imageData.substring(0, 100) + "...";
-          
           await supabase
             .from("food_uploads")
             .insert({
@@ -82,7 +80,7 @@ const Camera = () => {
               protein: completeAnalysisResult.protein,
               carbs: completeAnalysisResult.carbs,
               fat: completeAnalysisResult.fat,
-              image_url: truncatedImage, // Armazenar versão truncada
+              image_url: imageData, // Salvar a string base64 COMPLETA
             });
           
           await refreshUploadCredits();

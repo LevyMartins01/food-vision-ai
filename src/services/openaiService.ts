@@ -21,7 +21,7 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
   try {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     console.log("[openaiService] Tentando ler a VITE_OPENAI_API_KEY..."); // Log antes de verificar a chave
-
+    
     if (!apiKey) {
       console.error("[openaiService] ERRO: API key da OpenAI não encontrada nas variáveis de ambiente (VITE_OPENAI_API_KEY).");
       throw new Error("API key da OpenAI não configurada. Por favor, adicione a chave no arquivo .env");
@@ -30,7 +30,7 @@ export async function analyzeImageWithOpenAI(imageBase64: string): Promise<FoodA
     // Log para verificar a chave lida (sem expor a chave inteira)
     const apiKeyPreview = `${apiKey.substring(0, 5)}...${apiKey.substring(apiKey.length - 4)}`;
     console.log(`[openaiService] Chave API lida (prévia): ${apiKeyPreview}`);
-
+    
     // Removendo o prefixo da string base64 se existir (ex: data:image/jpeg;base64,)
     const base64Image = imageBase64.includes('base64,') 
       ? imageBase64.split('base64,')[1] 
@@ -153,14 +153,14 @@ export async function getDetailedAnalysisText(foodName: string): Promise<string>
 
     const apiURL = "https://api.openai.com/v1/chat/completions";
     const payload = {
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
           content: "Você é um assistente nutricional prestativo e informativo. Gere respostas claras, bem estruturadas e fáceis de ler para o usuário final."
-        },
-        {
-          role: "user",
+          },
+          {
+            role: "user",
           content: `Gere uma análise detalhada para o prato "${foodName}". Siga **exatamente** esta estrutura e use Markdown para formatação (negrito com **):\n\n**Análise Visual do Prato:**\nListe os alimentos que você acredita estarem presentes no prato de forma numerada.\n\n**Estimativa Nutricional Geral:**\n*   **Equilíbrio:** Descreva brevemente o equilíbrio de macronutrientes (proteínas, carboidratos, gorduras) e fibras.\n*   **Ideal para:** Sugira para quem ou qual objetivo este prato seria mais adequado (ex: ganho de massa, refeição leve, pós-treino).\n*   **Sugestão:** Dê uma dica rápida para tornar o prato ainda melhor ou uma sugestão de consumo.\n\nSeja informativo, mas conciso.`
         }
       ],
@@ -178,7 +178,7 @@ export async function getDetailedAnalysisText(foodName: string): Promise<string>
       body: JSON.stringify(payload)
     });
     console.log(`[openaiService] Resposta da análise textual recebida. Status: ${response.status}`);
-
+    
     if (!response.ok) {
       const errorBody = await response.text();
       console.error(`[openaiService] ERRO na resposta da análise textual: Status ${response.status}`);
@@ -192,7 +192,7 @@ export async function getDetailedAnalysisText(foodName: string): Promise<string>
       } catch (e) { /* Ignorar erro de parse */ }
       throw new Error(specificError);
     }
-
+    
     const data = await response.json();
     if (!data.choices || data.choices.length === 0 || !data.choices[0].message || !data.choices[0].message.content) {
       console.error("[openaiService] ERRO: Resposta da análise textual em formato inesperado.", data);
@@ -205,6 +205,6 @@ export async function getDetailedAnalysisText(foodName: string): Promise<string>
 
   } catch (error) {
     console.error("[openaiService] ERRO GERAL na função getDetailedAnalysisText:", error);
-    throw error; 
+    throw error;
   }
 }

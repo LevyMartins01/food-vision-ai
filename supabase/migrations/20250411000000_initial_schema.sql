@@ -1,4 +1,3 @@
-
 -- Create schema for tracking user uploads
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -17,7 +16,8 @@ CREATE TABLE IF NOT EXISTS public.food_uploads (
   protein DECIMAL,
   carbs DECIMAL,
   fat DECIMAL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_deleted BOOLEAN DEFAULT FALSE
 );
 
 -- Create schema for subscription status
@@ -73,11 +73,17 @@ CREATE POLICY "Users can view their own profile"
 CREATE POLICY "Users can view their own uploads"
   ON public.food_uploads
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id AND is_deleted = FALSE);
 
 CREATE POLICY "Users can insert their own uploads"
   ON public.food_uploads
   FOR INSERT
+  WITH CHECK (auth.uid() = user_id AND is_deleted = FALSE);
+
+CREATE POLICY "Users can update their own uploads (soft delete)"
+  ON public.food_uploads
+  FOR UPDATE
+  USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 -- Create RLS policies for subscriptions
@@ -118,3 +124,10 @@ BEGIN
   RETURN daily_count < max_uploads;
 END;
 $$;
+
+-- Adiciona um índice na nova coluna para otimizar consultas futuras (opcional, mas recomendado)
+CREATE INDEX idx_food_uploads_is_deleted ON public.food_uploads (is_deleted);
+
+-- Garante que a coluna não seja nula (opcional, mas bom para consistência)
+ALTER TABLE public.food_uploads
+ALTER COLUMN is_deleted SET NOT NULL;

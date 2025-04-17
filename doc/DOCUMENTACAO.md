@@ -92,7 +92,10 @@ food-vision-ai/
     *   **IMPORTANTE:** Edite o arquivo `.env` **localmente** com suas chaves de API reais e URLs. **NUNCA comite este arquivo `.env` no Git.** Consulte a seção "Variáveis de Ambiente" abaixo para mais detalhes e a lista de variáveis necessárias.
 4.  **Configurar o Supabase:**
     *   Certifique-se de que seu projeto Supabase está criado.
-    *   Execute as migrações encontradas em `supabase/migrations/` para criar as tabelas e funções necessárias no seu banco de dados Supabase. Use a CLI do Supabase ou o editor SQL no painel do Supabase.
+    *   **Instalar a CLI do Supabase:** Siga as instruções oficiais ([https://supabase.com/docs/guides/cli](https://supabase.com/docs/guides/cli)). Para Windows, o método recomendado é via Scoop (`scoop install supabase`). Para outros sistemas, use o gerenciador de pacotes apropriado (ex: `brew install supabase/tap/supabase`).
+    *   **Autenticar e Linkar:** Após instalar a CLI, autentique-se (`supabase login`) e linke seu projeto local ao projeto remoto Supabase (`supabase link --project-ref <seu_project_ref>`). Pode ser necessário fornecer a senha do banco de dados.
+    *   **Aplicar Migrações:** Execute as migrações encontradas em `supabase/migrations/` para criar/atualizar as tabelas e funções necessárias no seu banco de dados Supabase remoto. Use a CLI: `supabase db push`. Certifique-se de que todas as migrações locais foram aplicadas ao banco remoto.
+    *   **(Opcional) Gerar Tipos TypeScript:** Após aplicar migrações que alteram o schema do banco de dados, gere os tipos atualizados para o frontend: `supabase gen types typescript --project-id <seu_project_ref> --schema public > src/integrations/supabase/types.ts`.
     *   Faça o deploy das Edge Functions encontradas em `supabase/functions/` para o seu projeto Supabase. Use a CLI do Supabase: `supabase functions deploy --project-ref <seu_project_ref>`.
 5.  **Rodar a Aplicação em Modo de Desenvolvimento:**
     ```bash
@@ -184,7 +187,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     *   **Detalhes da Análise (Modal):** Ao clicar no botão "Detalhes" no card de resultado, um modal é exibido.
         *   Este modal mostra a imagem original, os dados nutricionais totais e uma análise textual mais detalhada.
         *   A análise textual é gerada por uma segunda chamada à API OpenAI (modelo `gpt-4o`, apenas texto), solicitando uma descrição visual, equilíbrio nutricional e sugestões, formatada com Markdown básico (negrito).
-*   **Histórico:** Salva as análises realizadas (localmente via `localStorage` e/ou no banco de dados Supabase para usuários logados).
+*   **Histórico:** Salva as análises realizadas. Para usuários não logados ou gratuitos, usa `localStorage`. Para usuários Premium logados, salva no banco de dados Supabase. Permite "ocultar" (soft delete) o histórico online para usuários Premium. Inclui busca por nome para usuários Premium.
 *   **Perfil:** Exibe informações do usuário e estatísticas (total de uploads, etc.).
 *   **Assinaturas:**
     *   Verifica o status da assinatura do usuário.
@@ -198,8 +201,9 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 *   **Banco de Dados:**
     *   `users` (implícita, gerenciada pelo Supabase Auth)
     *   `subscriptions`: Armazena o status da assinatura de cada usuário, plano, ID do cliente Stripe, etc.
-    *   `food_uploads`: Armazena um registro de cada análise feita (ID do usuário, nome do alimento, dados nutricionais, timestamp).
-    *   **Segurança:** Políticas de RLS (Row Level Security) são aplicadas para garantir que usuários só possam acessar/modificar seus próprios dados.
+    *   `food_uploads`: Armazena um registro de cada análise feita (ID do usuário, nome do alimento, dados nutricionais, timestamp, `is_deleted` para soft delete).
+    *   **Índices:** Inclui índices em `food_uploads` para otimizar consultas (ex: `idx_food_uploads_user_id_is_deleted`, `idx_food_uploads_is_deleted`).
+    *   **Segurança:** Políticas de RLS (Row Level Security) são aplicadas para garantir que usuários só possam acessar/modificar seus próprios dados. As políticas de `food_uploads` consideram o status `is_deleted` (usuários só veem itens não deletados, só podem inserir itens não deletados, e podem atualizar seus próprios itens para marcar como deletados).
 *   **Edge Functions:**
     *   `check-upload-limit`: Verifica se um usuário (gratuito) atingiu o limite diário de uploads.
     *   `create-checkout`: Cria uma sessão de checkout no Stripe para um plano específico.
@@ -239,8 +243,9 @@ A seguir estão funcionalidades planejadas para futuras versões, a maioria das 
 *   **Histórico Aprimorado (Premium):**
         *   **Busca e Filtro:** 
             *   Implementada busca por nome do alimento para usuários Premium, com debounce para performance.
+            *   Implementada funcionalidade de "Ocultar Histórico" (Soft Delete) via botão Limpar.
             *   Interface de busca visível apenas para Premium.
-            *   Usuários não-premium veem uma mensagem de upgrade.
+            *   Usuários não-premium veem uma mensagem de upgrade e botão Limpar atua apenas no `localStorage`.
             *   Filtros avançados (data, calorias) planejados para o futuro.
         *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
 *   **Metas e Acompanhamento (Premium):**
