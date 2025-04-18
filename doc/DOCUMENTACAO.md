@@ -4,9 +4,26 @@
 
 FoodCam AI é uma aplicação web desenvolvida para fornecer análise nutricional instantânea de alimentos utilizando inteligência artificial. Os usuários podem tirar uma foto ou fazer upload de uma imagem de um alimento, e a aplicação identifica o alimento e retorna informações nutricionais estimadas (calorias, proteínas, carboidratos, gorduras).
 
-A aplicação possui um sistema de autenticação, histórico de análises, perfil de usuário e um modelo de assinatura freemium:
-*   **Gratuito:** Limite de 2 análises diárias.
-*   **Premium (Mensal/Anual):** Análises ilimitadas e acesso a recursos futuros.
+A aplicação possui um sistema de autenticação, histórico de análises, perfil de usuário e um modelo de assinatura freemium detalhado abaixo.
+
+## 1.1. Modelo de Assinatura Freemium
+
+*   **Plano Gratuito (Free):**
+    *   Limite de 2 análises por dia (via câmera ou upload).
+    *   Histórico de análises limitado (armazenado localmente via `localStorage`).
+    *   Funcionalidades básicas de visualização de resultados.
+    *   Exibe banners/seções de upgrade para planos Premium.
+*   **Plano Mensal (Premium):**
+    *   Análises de imagem ilimitadas.
+    *   Histórico completo salvo no banco de dados Supabase.
+    *   Acesso à funcionalidade "Análise Detalhada" (modal com mais informações geradas por IA).
+    *   Acesso à busca no histórico por nome do alimento.
+    *   Acesso aos **Filtros** no histórico (por data, etc. - *a implementar*).
+    *   Sem acesso a Metas e Acompanhamento.
+*   **Plano Anual (Premium):**
+    *   Todos os benefícios do Plano Mensal.
+    *   Acesso completo à funcionalidade de **Metas e Acompanhamento** (definição e monitoramento de calorias diárias implementado; mais nutrientes e períodos no futuro).
+    *   Acesso futuro a gráficos de progresso e visualizações avançadas.
 
 ## 2. Tecnologias Utilizadas e Documentação Oficial
 
@@ -180,21 +197,12 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ## 7. Funcionalidades Principais
 
-*   **Autenticação:** Cadastro e login de usuários (usando Supabase Auth - email/senha, possivelmente OAuth).
-*   **Câmera/Upload:** Permite ao usuário tirar uma foto ou selecionar um arquivo de imagem.
-*   **Análise Nutricional:** Envia a imagem para a API da OpenAI Vision (via Supabase Function ou diretamente, dependendo da implementação final), que analisa a imagem e retorna dados nutricionais estimados. A aplicação exibe esses dados.
-    *   Utiliza a API OpenAI Vision (`gpt-4o`) para identificar o alimento e estimar macronutrientes totais.
-    *   **Detalhes da Análise (Modal):** Ao clicar no botão "Detalhes" no card de resultado, um modal é exibido.
-        *   Este modal mostra a imagem original, os dados nutricionais totais e uma análise textual mais detalhada.
-        *   A análise textual é gerada por uma segunda chamada à API OpenAI (modelo `gpt-4o`, apenas texto), solicitando uma descrição visual, equilíbrio nutricional e sugestões, formatada com Markdown básico (negrito).
-*   **Histórico:** Salva as análises realizadas. Para usuários não logados ou gratuitos, usa `localStorage`. Para usuários Premium logados, salva no banco de dados Supabase. Permite "ocultar" (soft delete) o histórico online para usuários Premium. Inclui busca por nome para usuários Premium.
-*   **Perfil:** Exibe informações do usuário (nome, email, status premium) e um resumo estatístico (total de refeições/calorias/proteínas dos últimos 100 uploads). Para usuários Premium, permite definir e acompanhar uma meta diária de calorias.
-*   **Assinaturas:**
-    *   Verifica o status da assinatura do usuário.
-    *   Limita uploads para usuários gratuitos (2 por dia).
-    *   Exibe opções de planos (Mensal/Anual).
-    *   Integração com Stripe Checkout para iniciar o processo de assinatura.
-    *   Webhook do Stripe (via Supabase Function) para atualizar o status da assinatura no banco de dados após pagamento bem-sucedido.
+*   **Autenticação:** Cadastro e login de usuários (Supabase Auth).
+*   **Câmera/Upload:** Permite capturar ou selecionar imagem para análise.
+*   **Análise Nutricional:** Envia imagem para OpenAI, exibe resultados. Inclui modal de **Análise Detalhada** (Premium Mensal/Anual).
+*   **Histórico:** Salva análises (`localStorage` para Free, Supabase para Premium). Permite soft delete e busca por nome (Premium Mensal/Anual). **Filtros** (Premium Mensal/Anual) a implementar.
+*   **Perfil:** Exibe informações do usuário e resumo estatístico. Permite definir e acompanhar meta diária de calorias (**Premium Anual**).
+*   **Assinaturas:** Gerencia planos (Free, Mensal, Anual) via Stripe. Inclui **limite de uso** para plano Free (a implementar).
 
 ## 8. Backend (Supabase)
 
@@ -228,9 +236,8 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
             *   Filtros avançados (data, calorias) planejados para o futuro.
         *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
 *   **Metas e Acompanhamento (Premium):**
-    *   **Definição de Metas:** Implementado formulário na página de Perfil para permitir ao usuário Premium definir/atualizar/limpar sua meta diária de calorias.
-    *   **Monitoramento:** Implementada exibição na página de Perfil mostrando as calorias consumidas no dia atual (via função RPC `get_calories_consumed_today`) em comparação com a meta definida, incluindo uma barra de progresso visual.
-    *   **Próximos Passos:** Permitir metas semanais, definir metas de macronutrientes, calcular metas automaticamente.
+    *   **Definição de Metas:** Permitir ao usuário definir metas personalizadas (diárias, semanais) de calorias, macronutrientes (proteína, carboidratos, gorduras) com base em objetivos (perder peso, manter, ganhar massa).
+    *   **Monitoramento:** Exibir o progresso do dia atual em relação às metas definidas, utilizando os dados das análises realizadas.
 *   **Plano Alimentar AI (Premium):**
     *   **Formulário de Perfil:** Coletar informações do usuário (objetivos, restrições, preferências básicas, nível de atividade).
     *   **Geração por IA:** Utilizar um modelo de linguagem da OpenAI para gerar sugestões de planos alimentares personalizados com base no formulário preenchido.
@@ -258,27 +265,15 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 *   **Políticas de CORS:** Configure corretamente os cabeçalhos CORS nas suas Edge Functions do Supabase para permitir requisições apenas do seu domínio frontend.
 *   **Atualizações de Dependência:** Mantenha as dependências do projeto (NPM) atualizadas regularmente para corrigir vulnerabilidades de segurança.
 
-## 12. Funcionalidades Planejadas (Roadmap - Maioria Premium)
+## 12. Funcionalidades Planejadas e Próximos Passos
 
-A seguir estão funcionalidades planejadas para futuras versões, a maioria das quais será exclusiva para assinantes Premium:
-
-*   **Histórico Aprimorado (Premium):**
-        *   **Busca e Filtro:** 
-            *   Implementada busca por nome do alimento para usuários Premium, com debounce para performance.
-            *   Implementada funcionalidade de "Ocultar Histórico" (Soft Delete) via botão Limpar.
-            *   Interface de busca visível apenas para Premium.
-            *   Usuários não-premium veem uma mensagem de upgrade e botão Limpar atua apenas no `localStorage`.
-            *   Filtros avançados (data, calorias) planejados para o futuro.
-        *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
-*   **Metas e Acompanhamento (Premium):**
-    *   **Definição de Metas:** Permitir ao usuário definir metas personalizadas (diárias, semanais) de calorias, macronutrientes (proteína, carboidratos, gorduras) com base em objetivos (perder peso, manter, ganhar massa).
-    *   **Monitoramento:** Exibir o progresso do dia atual em relação às metas definidas, utilizando os dados das análises realizadas.
-*   **Plano Alimentar AI (Premium):**
-    *   **Formulário de Perfil:** Coletar informações do usuário (objetivos, restrições, preferências básicas, nível de atividade).
-    *   **Geração por IA:** Utilizar um modelo de linguagem da OpenAI para gerar sugestões de planos alimentares personalizados com base no formulário preenchido.
-*   **Melhorias Gerais de UX:**
-    *   Otimização contínua da performance.
-    *   Refinamento do feedback visual durante operações assíncronas.
-*   **Paywall Básico:** Implementada lógica inicial para diferenciar conteúdo/funcionalidade entre usuários gratuitos e premium (ex: busca no histórico).
+*   **Implementar Filtros no Histórico (Premium Mensal/Anual):** Adicionar opções de filtro (inicialmente por data) na página de Histórico.
+*   **Implementar Limite de Upload (Gratuito):** Adicionar verificação via função RPC `check_upload_limit` no fluxo da câmera/upload para bloquear usuários Free após 2 análises diárias.
+*   **Ajustar Visibilidade de Features:** Garantir que "Análise Detalhada" e Filtros só apareçam/funcionem para Premium (Mensal/Anual) e que a seção de Metas no Perfil só apareça para Premium Anual.
+*   **Refinar Metas e Acompanhamento (Premium Anual):** Permitir metas semanais, definir metas de macronutrientes, calcular metas automaticamente.
+*   **Visualização de Dados / Gráficos (Premium Anual):** Apresentar gráficos simples (ex: resumo calórico diário/semanal) nas páginas de Histórico e/ou Perfil.
+*   **Plano Alimentar AI (Premium Anual):** Desenvolver funcionalidade de geração de planos alimentares.
+*   **Melhorias Gerais de UX:** Otimização contínua, feedback visual.
+*   **Corrigir Vulnerabilidades:** Investigar e corrigir a vulnerabilidade de dependência reportada pelo `npm audit` / GitHub.
 
 Esta documentação deve fornecer uma boa base para entender e gerenciar o projeto FoodCam AI. Lembre-se de mantê-la atualizada conforme o projeto evolui. 
