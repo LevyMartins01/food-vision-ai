@@ -95,7 +95,7 @@ food-vision-ai/
     *   **Instalar a CLI do Supabase:** Siga as instruções oficiais ([https://supabase.com/docs/guides/cli](https://supabase.com/docs/guides/cli)). Para Windows, o método recomendado é via Scoop (`scoop install supabase`). Para outros sistemas, use o gerenciador de pacotes apropriado (ex: `brew install supabase/tap/supabase`).
     *   **Autenticar e Linkar:** Após instalar a CLI, autentique-se (`supabase login`) e linke seu projeto local ao projeto remoto Supabase (`supabase link --project-ref <seu_project_ref>`). Pode ser necessário fornecer a senha do banco de dados.
     *   **Aplicar Migrações:** Execute as migrações encontradas em `supabase/migrations/` para criar/atualizar as tabelas e funções necessárias no seu banco de dados Supabase remoto. Use a CLI: `supabase db push`. Certifique-se de que todas as migrações locais foram aplicadas ao banco remoto.
-    *   **(Opcional) Gerar Tipos TypeScript:** Após aplicar migrações que alteram o schema do banco de dados, gere os tipos atualizados para o frontend: `supabase gen types typescript --project-id <seu_project_ref> --schema public > src/integrations/supabase/types.ts`.
+    *   **(Opcional) Gerar Tipos TypeScript:** Após aplicar migrações que alteram o schema ou adicionam funções RPC, gere os tipos atualizados para o frontend: `supabase gen types typescript --project-id <seu_project_ref> --schema public > src/integrations/supabase/types.ts`.
     *   Faça o deploy das Edge Functions encontradas em `supabase/functions/` para o seu projeto Supabase. Use a CLI do Supabase: `supabase functions deploy --project-ref <seu_project_ref>`.
 5.  **Rodar a Aplicação em Modo de Desenvolvimento:**
     ```bash
@@ -188,7 +188,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
         *   Este modal mostra a imagem original, os dados nutricionais totais e uma análise textual mais detalhada.
         *   A análise textual é gerada por uma segunda chamada à API OpenAI (modelo `gpt-4o`, apenas texto), solicitando uma descrição visual, equilíbrio nutricional e sugestões, formatada com Markdown básico (negrito).
 *   **Histórico:** Salva as análises realizadas. Para usuários não logados ou gratuitos, usa `localStorage`. Para usuários Premium logados, salva no banco de dados Supabase. Permite "ocultar" (soft delete) o histórico online para usuários Premium. Inclui busca por nome para usuários Premium.
-*   **Perfil:** Exibe informações do usuário e estatísticas (total de uploads, etc.).
+*   **Perfil:** Exibe informações do usuário (nome, email, status premium) e um resumo estatístico (total de refeições/calorias/proteínas dos últimos 100 uploads). Para usuários Premium, permite definir e acompanhar uma meta diária de calorias.
 *   **Assinaturas:**
     *   Verifica o status da assinatura do usuário.
     *   Limita uploads para usuários gratuitos (2 por dia).
@@ -202,12 +202,15 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     *   `users` (implícita, gerenciada pelo Supabase Auth)
     *   `subscriptions`: Armazena o status da assinatura de cada usuário, plano, ID do cliente Stripe, etc.
     *   `food_uploads`: Armazena um registro de cada análise feita (ID do usuário, nome do alimento, dados nutricionais, timestamp, `is_deleted` para soft delete).
+    *   `user_goals`: Armazena a meta diária de calorias para usuários premium (`user_id`, `daily_calories_goal`).
     *   **Índices:** Inclui índices em `food_uploads` para otimizar consultas (ex: `idx_food_uploads_user_id_is_deleted`, `idx_food_uploads_is_deleted`).
-    *   **Segurança:** Políticas de RLS (Row Level Security) são aplicadas para garantir que usuários só possam acessar/modificar seus próprios dados. As políticas de `food_uploads` consideram o status `is_deleted` (usuários só veem itens não deletados, só podem inserir itens não deletados, e podem atualizar seus próprios itens para marcar como deletados).
+    *   **Segurança:** Políticas de RLS (Row Level Security) são aplicadas para garantir que usuários só possam acessar/modificar seus próprios dados (`user_profiles`, `subscriptions`, `food_uploads`, `user_goals`). As políticas de `food_uploads` consideram o status `is_deleted`. As políticas de `user_goals` permitem que usuários gerenciem apenas suas próprias metas.
 *   **Edge Functions:**
     *   `check-upload-limit`: Verifica se um usuário (gratuito) atingiu o limite diário de uploads.
     *   `create-checkout`: Cria uma sessão de checkout no Stripe para um plano específico.
-    *   `webhook-stripe`: Recebe eventos do Stripe (ex: `checkout.session.completed`, `invoice.paid`) e atualiza o status da assinatura no banco de dados Supabase.
+    *   `webhook-stripe`: Recebe eventos do Stripe e atualiza o status da assinatura no banco de dados Supabase.
+*   **Funções RPC (Banco de Dados):**
+    *   `get_calories_consumed_today(p_user_id UUID)`: Calcula e retorna o total de calorias consumidas pelo usuário no dia atual (usado na página de Perfil para monitoramento da meta).
 
 ## 9. API Integrations
 
@@ -216,6 +219,25 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     *   `VITE_STRIPE_PUBLISHABLE_KEY`: Usada no frontend para inicializar o Stripe.js e redirecionar para o Checkout.
     *   Links de Pagamento (`VITE_STRIPE_MONTHLY_LINK`, `VITE_STRIPE_ANNUAL_LINK`): Podem ser usados para redirecionamento direto ou como referência na criação de sessões de checkout.
     *   Chave Secreta do Stripe: **NÃO DEVE** estar no frontend. É configurada como variável de ambiente segura nas Edge Functions do Supabase (`create-checkout`, `webhook-stripe`) para interagir com a API do Stripe no backend.
+*   **Histórico Aprimorado (Premium):**
+        *   **Busca e Filtro:** 
+            *   Implementada busca por nome do alimento para usuários Premium, com debounce para performance.
+            *   Implementada funcionalidade de "Ocultar Histórico" (Soft Delete) via botão Limpar.
+            *   Interface de busca visível apenas para Premium.
+            *   Usuários não-premium veem uma mensagem de upgrade e botão Limpar atua apenas no `localStorage`.
+            *   Filtros avançados (data, calorias) planejados para o futuro.
+        *   **Visualização de Dados:** Apresentar gráficos simples (ex: resumo calórico diário/semanal) na página de histórico.
+*   **Metas e Acompanhamento (Premium):**
+    *   **Definição de Metas:** Implementado formulário na página de Perfil para permitir ao usuário Premium definir/atualizar/limpar sua meta diária de calorias.
+    *   **Monitoramento:** Implementada exibição na página de Perfil mostrando as calorias consumidas no dia atual (via função RPC `get_calories_consumed_today`) em comparação com a meta definida, incluindo uma barra de progresso visual.
+    *   **Próximos Passos:** Permitir metas semanais, definir metas de macronutrientes, calcular metas automaticamente.
+*   **Plano Alimentar AI (Premium):**
+    *   **Formulário de Perfil:** Coletar informações do usuário (objetivos, restrições, preferências básicas, nível de atividade).
+    *   **Geração por IA:** Utilizar um modelo de linguagem da OpenAI para gerar sugestões de planos alimentares personalizados com base no formulário preenchido.
+*   **Melhorias Gerais de UX:**
+    *   Otimização contínua da performance.
+    *   Refinamento do feedback visual durante operações assíncronas.
+*   **Paywall Básico:** Implementada lógica inicial para diferenciar conteúdo/funcionalidade entre usuários gratuitos e premium (ex: busca no histórico).
 
 ## 10. Deploy (VPS com Easy Panel)
 

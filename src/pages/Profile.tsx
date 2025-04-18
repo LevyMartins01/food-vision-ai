@@ -19,6 +19,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+// Importar o tipo da tabela (será gerado)
+import type { Database } from "@/integrations/supabase/types";
+// Importar o formulário de meta
+import GoalForm from "@/components/profile/GoalForm";
+// Importar componente de progresso (opcional, para visualização)
+import { Progress } from "@/components/ui/progress";
+
+type UserGoal = Database["public"]["Tables"]["user_goals"]["Row"];
+// Tipo específico para a seleção de calorias (não mais necessário para RPC)
+// type FoodUploadCalories = Pick<Database["public"]["Tables"]["food_uploads"]["Row"], 'calories'>;
 
 const Profile = () => {
   const { user, signOut, subscription } = useAuth();
@@ -29,60 +39,51 @@ const Profile = () => {
     totalProtein: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
-  
+  // Novos estados para metas
+  const [currentUserGoal, setCurrentUserGoal] = useState<UserGoal | null>(null);
+  const [isGoalLoading, setIsGoalLoading] = useState(true); 
+  const [isSavingGoal, setIsSavingGoal] = useState(false);
+  // Novo estado para calorias consumidas hoje
+  const [caloriesConsumedToday, setCaloriesConsumedToday] = useState<number | null>(null);
+
   useEffect(() => {
-    const fetchUserStats = async () => {
+    const fetchProfileData = async () => {
       if (!user) {
         setStatsLoading(false);
+        setIsGoalLoading(false); // Parar loading da meta se não houver usuário
+        setCaloriesConsumedToday(null);
         return;
       }
       setStatsLoading(true);
-      console.log("[Profile] fetchUserStats: Iniciando busca para usuário:", user.id);
+      setIsGoalLoading(true); // Iniciar loading da meta
+      console.log("[Profile] fetchProfileData: Iniciando busca para usuário:", user.id);
+      // Resetar calorias consumidas antes de buscar
+      setCaloriesConsumedToday(null);
 
       try {
-        // Get total uploads count
+        // Buscar Estatísticas (código existente)
         const { count, error: countError } = await supabase
           .from("food_uploads")
           .select("*", { count: 'exact', head: true })
           .eq("user_id", user.id);
           
         if (countError) throw countError;
+        console.log(`[Profile] fetchProfileData: Total de uploads encontrados: ${count}`);
         
-        console.log(`[Profile] fetchUserStats: Total de uploads encontrados: ${count}`);
-        
-        // Get nutritional totals
         const { data: nutritionData, error: nutritionError } = await supabase
           .from("food_uploads")
           .select("calories, protein")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(100);
-        
+          .eq("user_id", user.id);
+        // .order("created_at", { ascending: false })
+        // .limit(100); // Remover limit para calcular totais corretos?
         if (nutritionError) throw nutritionError;
+        console.log("[Profile] fetchProfileData: Dados nutricionais recebidos:", nutritionData);
         
-        // Log dos dados recebidos
-        console.log("[Profile] fetchUserStats: Dados nutricionais recebidos (nutritionData):", nutritionData);
-        
-        // Calculate totals
         let totalCalories = 0;
         let totalProtein = 0;
-        
         if (nutritionData && nutritionData.length > 0) {
-          console.log(`[Profile] fetchUserStats: Calculando totais para ${nutritionData.length} registros.`);
-          totalCalories = nutritionData.reduce((sum, item) => {
-            // Log de cada item de caloria
-            // console.log(`[Profile] Calculando calorias: item.calories=${item.calories}, sum=${sum}`);
-            return sum + (item.calories || 0);
-          }, 0);
-          totalProtein = nutritionData.reduce((sum, item) => {
-            // Log de cada item de proteína
-            const proteinValue = Number(item.protein) || 0;
-            console.log(`[Profile] Calculando proteína: item.protein=${item.protein}, proteinValue=${proteinValue}, sum=${sum}`);
-            return sum + proteinValue;
-          }, 0);
-          console.log(`[Profile] fetchUserStats: Totais calculados - Calories: ${totalCalories}, Protein: ${totalProtein}`);
-        } else {
-          console.log("[Profile] fetchUserStats: Nenhum dado nutricional encontrado para calcular totais.");
+          totalCalories = nutritionData.reduce((sum, item) => sum + (item.calories || 0), 0);
+          totalProtein = nutritionData.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
         }
         
         setUserStats({
@@ -90,17 +91,95 @@ const Profile = () => {
           totalCalories,
           totalProtein: Math.round(totalProtein)
         });
-        console.log("[Profile] fetchUserStats: Estado userStats atualizado.");
+        console.log("[Profile] fetchProfileData: Estado userStats atualizado.");
+
+        // Buscar Meta de Calorias e Consumo de Hoje (APENAS SE PREMIUM)
+        if (subscription && subscription.isActive) {
+          console.log("[Profile] fetchProfileData: Usuário premium, buscando meta e consumo de hoje...");
+          
+          // Buscar Meta (código existente)
+          const { data: goalData, error: goalError } = await supabase
+            .from('user_goals')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (goalError) throw goalError;
+          console.log("[Profile] fetchProfileData: Meta encontrada:", goalData);
+          setCurrentUserGoal(goalData);
+
+          // Buscar Calorias Consumidas Hoje usando RPC
+          console.log("[Profile] fetchProfileData: Chamando RPC get_calories_consumed_today...");
+          
+          const { data: consumedCalories, error: rpcError } = await supabase.rpc(
+            'get_calories_consumed_today',
+            { p_user_id: user.id } // Passando o parâmetro esperado pela função SQL
+          );
+
+          if (rpcError) {
+            console.error("[Profile] fetchProfileData: Erro ao chamar RPC:", rpcError);
+            throw rpcError; // Propagar o erro
+          }
+
+          // O RPC retorna diretamente o número
+          console.log(`[Profile] fetchProfileData: Calorias consumidas hoje (via RPC): ${consumedCalories}`);
+          setCaloriesConsumedToday(consumedCalories ?? 0); // Usar 0 se RPC retornar null por algum motivo
+
+        } else {
+           console.log("[Profile] fetchProfileData: Usuário não premium, não busca meta ou consumo.");
+           setCurrentUserGoal(null);
+           setCaloriesConsumedToday(null);
+        }
+
       } catch (error) {
-        console.error("[Profile] fetchUserStats: Erro ao buscar estatísticas:", error);
+        console.error("[Profile] fetchProfileData: Erro ao buscar dados do perfil:", error);
+        toast.error("Falha ao carregar dados do perfil.");
       } finally {
         setStatsLoading(false);
+        setIsGoalLoading(false); 
       }
     };
     
-    fetchUserStats();
-  }, [user]);
-  
+    fetchProfileData();
+    // Adicionar isPremiumUser como dependência?
+  }, [user, subscription]); 
+
+  // Função para salvar/atualizar a meta
+  const handleSaveGoal = async (newGoalValue: number | null) => {
+    if (!user) return;
+    if (newGoalValue !== null && newGoalValue <= 0) {
+      toast.error("A meta de calorias deve ser um número positivo.");
+      return;
+    }
+
+    setIsSavingGoal(true);
+    console.log(`[Profile] handleSaveGoal: Salvando meta ${newGoalValue} para usuário ${user.id}`);
+    try {
+      const { data, error } = await supabase
+        .from('user_goals')
+        .upsert({
+          user_id: user.id,
+          daily_calories_goal: newGoalValue, 
+          // created_at é default, updated_at será atualizado pelo trigger
+        }, { 
+          onConflict: 'user_id', // Se já existir linha para user_id, atualiza
+        })
+        .select() // Seleciona o registro inserido/atualizado
+        .single(); // Espera exatamente um resultado
+
+      if (error) throw error;
+
+      console.log("[Profile] handleSaveGoal: Meta salva com sucesso:", data);
+      setCurrentUserGoal(data); // Atualiza o estado local com a meta salva
+      toast.success("Meta de calorias salva com sucesso!");
+
+    } catch(error) {
+      console.error("[Profile] handleSaveGoal: Erro ao salvar meta:", error);
+      toast.error("Falha ao salvar a meta de calorias.");
+    } finally {
+      setIsSavingGoal(false);
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -111,12 +190,18 @@ const Profile = () => {
     }
   };
 
-  const isPremiumUser = subscription && subscription.isActive && ["monthly", "annual"].includes(subscription.plan);
+  const isPremiumUser = subscription && subscription.isActive; // Simplificado?
 
   const fullName = user?.user_metadata?.full_name || 
                   (user?.user_metadata?.first_name && user?.user_metadata?.last_name ? 
                     `${user.user_metadata.first_name} ${user.user_metadata.last_name}` : 
                     user?.email?.split('@')[0] || "Usuário");
+
+  // Calcular progresso (evitar divisão por zero)
+  const progressPercentage = 
+    currentUserGoal?.daily_calories_goal && currentUserGoal.daily_calories_goal > 0 && caloriesConsumedToday !== null
+      ? Math.min(100, Math.round((caloriesConsumedToday / currentUserGoal.daily_calories_goal) * 100)) 
+      : 0;
 
   return (
     <div className="pb-8">
@@ -129,7 +214,7 @@ const Profile = () => {
         <div>
           <h1 className="text-2xl font-bold">{fullName}</h1>
           <p className="text-foodcam-gray">{user?.email}</p>
-          {isPremiumUser && (
+          {subscription && subscription.isActive && (
             <div className="flex items-center mt-1 text-amber-400">
               <Crown size={14} className="mr-1" />
               <span className="text-sm font-medium">
@@ -164,8 +249,41 @@ const Profile = () => {
         )}
       </div>
       
+      {/* Seção de Metas (Premium) */}
+      {isPremiumUser && (
+        <div className="glass-card p-5 mb-6">
+          <h2 className="text-lg font-bold mb-4">Minhas Metas Diárias</h2>
+          {isGoalLoading ? (
+            <div className="flex justify-center items-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-foodcam-blue" />
+            </div>
+          ) : (
+            <div>
+              <GoalForm 
+                initialGoal={currentUserGoal?.daily_calories_goal ?? null}
+                onSave={handleSaveGoal}
+                isSaving={isSavingGoal}
+              />
+              {/* Monitoramento do Progresso */}
+              {currentUserGoal?.daily_calories_goal !== null && (
+                 <div className="mt-6 border-t border-foodcam-gray/10 pt-4 space-y-3">
+                   <div className="flex justify-between items-baseline">
+                      <span className="text-sm text-foodcam-gray">Progresso Hoje:</span>
+                      <span className="text-lg font-semibold">
+                        {caloriesConsumedToday ?? 0} / {currentUserGoal.daily_calories_goal} kcal
+                      </span>
+                   </div>
+                   {/* Barra de Progresso Opcional */}
+                   <Progress value={progressPercentage} className="h-2 bg-foodcam-gray/10" />
+                 </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      
       <div className="space-y-4">
-        {!isPremiumUser && (
+        {!subscription && (
           <Link to="/subscription" className="block">
             <div className="glass-card p-5 flex items-center justify-between border-foodcam-blue/30 border bg-gradient-to-r from-foodcam-darker to-foodcam-dark">
               <div className="flex items-center">
