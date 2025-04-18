@@ -265,7 +265,7 @@ const Profile = () => {
                 isSaving={isSavingGoal}
               />
               {/* Monitoramento do Progresso */}
-              {currentUserGoal?.daily_calories_goal !== null && (
+              {currentUserGoal && currentUserGoal.daily_calories_goal !== null && (
                  <div className="mt-6 border-t border-foodcam-gray/10 pt-4 space-y-3">
                    <div className="flex justify-between items-baseline">
                       <span className="text-sm text-foodcam-gray">Progresso Hoje:</span>
@@ -273,8 +273,11 @@ const Profile = () => {
                         {caloriesConsumedToday ?? 0} / {currentUserGoal.daily_calories_goal} kcal
                       </span>
                    </div>
-                   {/* Barra de Progresso Opcional */}
-                   <Progress value={progressPercentage} className="h-2 bg-foodcam-gray/10" />
+                   {/* Barra de Progresso Opcional - Calcular apenas se a meta existir */}
+                   <Progress 
+                      value={progressPercentage} 
+                      className="h-2 bg-foodcam-gray/10" 
+                   />
                  </div>
               )}
             </div>
