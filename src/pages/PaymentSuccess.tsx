@@ -9,12 +9,15 @@ import { toast } from "sonner";
 const PaymentSuccess = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { refreshUploadCredits } = useAuth();
+  const { refreshUploadCredits, refreshSubscription } = useAuth();
 
   useEffect(() => {
     const verifySubscription = async () => {
       try {
-        // Refresh user's upload credits to reflect new subscription status
+        // Refresh subscription status first
+        await refreshSubscription();
+        
+        // Then refresh upload credits to reflect new subscription status
         await refreshUploadCredits();
         
         // Success notification
@@ -30,7 +33,7 @@ const PaymentSuccess = () => {
     
     // Start verification process
     verifySubscription();
-  }, [refreshUploadCredits]);
+  }, [refreshUploadCredits, refreshSubscription]);
 
   return (
     <div className="py-12 px-4 max-w-md mx-auto text-center">
@@ -66,28 +69,28 @@ const PaymentSuccess = () => {
               </li>
               <li className="flex items-start">
                 <Check className="h-5 w-5 text-foodcam-blue mr-2 flex-shrink-0" />
-                <span>Detalhes nutricionais avançados</span>
+                <span>Metas diárias de calorias</span>
               </li>
               <li className="flex items-start">
                 <Check className="h-5 w-5 text-foodcam-blue mr-2 flex-shrink-0" />
-                <span>Suporte prioritário</span>
+                <span>Detalhes nutricionais avançados</span>
               </li>
             </ul>
           </div>
           
           <div className="flex flex-col space-y-3">
             <Button 
-              onClick={() => navigate("/camera")}
+              onClick={() => navigate("/profile")}
               className="blue-gradient"
             >
-              Começar a analisar
+              Configurar minhas metas
             </Button>
             
             <Button 
               variant="outline"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/camera")}
             >
-              Voltar para o início
+              Analisar alimentos
             </Button>
           </div>
         </div>

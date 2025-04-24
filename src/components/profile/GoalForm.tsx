@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +12,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Schema de validação com Zod
 const goalFormSchema = z.object({
@@ -35,6 +37,9 @@ interface GoalFormProps {
 }
 
 const GoalForm: React.FC<GoalFormProps> = ({ initialGoal, onSave, isSaving }) => {
+  const { subscription } = useAuth();
+  const isPremiumUser = subscription && subscription.isActive;
+  
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
     defaultValues: {
@@ -50,6 +55,27 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialGoal, onSave, isSaving }) =>
     console.log("[GoalForm] onSubmit data:", data);
     await onSave(data.daily_calories_goal); 
   };
+
+  if (!isPremiumUser) {
+    return (
+      <div className="bg-foodcam-darker/50 p-4 rounded-lg border border-foodcam-gray/20">
+        <div className="flex items-center gap-2 mb-3 text-foodcam-gray">
+          <Lock className="h-5 w-5" /> 
+          <h3 className="font-medium">Recurso Premium</h3>
+        </div>
+        <p className="text-sm text-foodcam-gray mb-4">
+          Defina metas diárias de calorias e acompanhe seu progresso com o plano Premium.
+        </p>
+        <Button 
+          variant="outline" 
+          className="w-full border-foodcam-blue/30 text-foodcam-blue"
+          onClick={() => window.location.href = '/subscription'}
+        >
+          Fazer upgrade para Premium
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -88,4 +114,4 @@ const GoalForm: React.FC<GoalFormProps> = ({ initialGoal, onSave, isSaving }) =>
   );
 };
 
-export default GoalForm; 
+export default GoalForm;

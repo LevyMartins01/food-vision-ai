@@ -18,6 +18,7 @@ interface AuthContextType {
     isPaidUser: boolean;
   } | null;
   refreshUploadCredits: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +52,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Function to refresh subscription data
+  const refreshSubscription = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch subscription data
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from("subscriptions")
+        .select("plan_type, is_active")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (subscriptionError) throw subscriptionError;
+      
+      if (subscriptionData) {
+        // Ensure free users don't get marked as premium
+        const isPaidPlan = ["monthly", "annual"].includes(subscriptionData.plan_type);
+        
+        setSubscription({
+          plan: subscriptionData.plan_type,
+          isActive: isPaidPlan && subscriptionData.is_active
+        });
+      } else {
+        // Default to free plan if no record exists
+        setSubscription({
+          plan: "free",
+          isActive: false
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching subscription data:", error);
+    }
+  };
+
   // Handle auth state changes
   useEffect(() => {
     const fetchUserData = async (userId: string) => {
@@ -65,9 +100,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (subscriptionError) throw subscriptionError;
         
         if (subscriptionData) {
+          // Ensure free users don't get marked as premium
+          const isPaidPlan = ["monthly", "annual"].includes(subscriptionData.plan_type);
+          
           setSubscription({
             plan: subscriptionData.plan_type,
-            isActive: subscriptionData.is_active
+            isActive: isPaidPlan && subscriptionData.is_active
+          });
+        } else {
+          // Default to free plan if no record exists
+          setSubscription({
+            plan: "free",
+            isActive: false
           });
         }
 
@@ -126,7 +170,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         subscription,
         signOut,
         uploadCredits,
-        refreshUploadCredits
+        refreshUploadCredits,
+        refreshSubscription
       }}
     >
       {children}

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PlanProps {
   title: string;
@@ -69,6 +70,7 @@ const Plan = ({
 const SubscriptionPlans = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<"monthly" | "annual" | null>(null);
+  const { refreshSubscription } = useAuth();
 
   const handleSelectPlan = async (planType: "monthly" | "annual") => {
     try {
@@ -94,6 +96,11 @@ const SubscriptionPlans = () => {
 
       if (data?.url) {
         window.location.href = data.url;
+        
+        // Refresh subscription data after payment (in case they return)
+        setTimeout(() => {
+          refreshSubscription();
+        }, 5000);
       } else {
         throw new Error('Falha ao obter o link de pagamento');
       }
@@ -128,7 +135,7 @@ const SubscriptionPlans = () => {
             "Análises ilimitadas de alimentos",
             "Histórico completo de análises",
             "Detalhes nutricionais avançados",
-            "Suporte prioritário"
+            "Definição de metas diárias"
           ]}
         />
         
@@ -142,9 +149,9 @@ const SubscriptionPlans = () => {
           onSelect={handleSelectPlan}
           features={[
             "Tudo do plano mensal",
-            "$4,17 fica ao mês",
-            "Exportação de dados",
-            "Análises em lote (em breve)"
+            "$4,17 por mês (economia de 48%)",
+            "Metas e progresso nutricional",
+            "Prioridade em novas funcionalidades"
           ]}
         />
       </div>
