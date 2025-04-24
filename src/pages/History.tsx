@@ -21,9 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import { debounce } from "lodash-es";
 import type { Database } from '@/integrations/supabase/types';
-import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
 
-// Updated to match the FoodAnalysis interface with date as string type
 interface HistoryItemWithMeta extends FoodAnalysis {
   id: string;
   date: string;
@@ -38,7 +36,6 @@ const History = () => {
   const isPremiumUser = subscription?.isActive;
   const [isClearing, setIsClearing] = useState(false); 
 
-  // Função Debounced para buscar dados (evita chamadas excessivas)
   const debouncedFetchData = debounce(async (currentSearchTerm: string) => {
     setIsLoading(true);
     let items: HistoryItemWithMeta[] = [];
@@ -47,13 +44,7 @@ const History = () => {
       if (isPremiumUser && user) {
         console.log(`[History] Buscando do Supabase (is_deleted=false)...`);
         
-        // Definir tipo explícito para a query
-        type FoodUploadSelect = Database["public"]["Tables"]["food_uploads"]["Row"];
-        let query: PostgrestFilterBuilder<
-          Database["public"],
-          Database["public"]["Tables"]["food_uploads"]["Row"],
-          FoodUploadSelect[] // O tipo do resultado esperado
-        > = supabase
+        let query = supabase
           .from('food_uploads')
           .select('id, created_at, food_name, calories, protein, carbs, fat, image_url')
           .eq('user_id', user.id)
@@ -65,31 +56,27 @@ const History = () => {
         }
 
         const { data, error } = await query;
-        // O tipo FoodUploadData ainda é útil para o map
-        type FoodUploadData = Database["public"]["Tables"]["food_uploads"]["Row"];
         
         if (error) throw error;
 
-        items = data?.map((item: FoodUploadData): HistoryItemWithMeta => ({
+        items = (data || []).map((item): HistoryItemWithMeta => ({
           id: item.id, 
           name: item.food_name ?? "Nome não encontrado",
-          // Usar valores padrão 0 se os campos não existirem ou forem null
-          confidence: 0.8, // Definir um padrão, já que não selecionamos
+          confidence: 0.8,
           calories: item.calories ?? 0,
-          protein: item.protein ?? 0, // Já tratava null, manter
+          protein: item.protein ?? 0,
           carbs: item.carbs ?? 0,
           fat: item.fat ?? 0,
           image: item.image_url ?? "/placeholder.svg", 
-          servingSize: "1 porção", // Definir um padrão, já que não selecionamos
+          servingSize: "1 porção",
           date: item.created_at ?? new Date().toISOString()
-        })) ?? [];
+        }));
 
         console.log(`[History] ${items.length} itens (não deletados) carregados do Supabase.`);
 
       } else {
-        // Não Premium / Não logado: Buscar do localStorage e filtrar localmente
         console.log("[History] Buscando do localStorage (usuário não premium ou não logado).");
-      const savedItems = JSON.parse(localStorage.getItem("foodcam-history") || "[]");
+        const savedItems = JSON.parse(localStorage.getItem("foodcam-history") || "[]");
         if (currentSearchTerm) {
           items = savedItems.filter((item: HistoryItemWithMeta) => 
             item.name.toLowerCase().includes(currentSearchTerm.toLowerCase())
@@ -97,11 +84,19 @@ const History = () => {
         } else {
           items = savedItems;
         }
-        // Adicionar item de exemplo se localStorage estiver vazio (apenas para demonstração)
         if (items.length === 0 && !currentSearchTerm) {
            items = [
-             { /* ... item de exemplo ... */ 
-               id: "example-1", name: "Exemplo (Limpe o Histórico)", confidence: 0.9, calories: 100, protein: 10, carbs: 10, fat: 2, image: "/placeholder.svg", servingSize: "1", date: new Date().toISOString()
+             { 
+               id: "example-1", 
+               name: "Exemplo (Limpe o Histórico)", 
+               confidence: 0.9, 
+               calories: 100, 
+               protein: 10, 
+               carbs: 10, 
+               fat: 2, 
+               image: "/placeholder.svg", 
+               servingSize: "1", 
+               date: new Date().toISOString()
              }
            ];
         }
@@ -111,16 +106,16 @@ const History = () => {
     } catch (error) {
       console.error("[History] Erro ao buscar histórico:", error);
       toast.error("Falha ao carregar o histórico.");
-      setHistoryItems([]); // Limpar em caso de erro
+      setHistoryItems([]);
     } finally {
       setIsLoading(false);
     }
-  }, 300); // 300ms de debounce
+  }, 300);
 
   useEffect(() => {
     debouncedFetchData(searchTerm);
     return () => debouncedFetchData.cancel();
-  }, [searchTerm, user, isPremiumUser]); // Rebuscar quando termo, usuário ou status premium mudar
+  }, [searchTerm, user, isPremiumUser]);
 
   const handleConfirmClearPremiumHistory = async () => {
     if (!user) return;
@@ -131,14 +126,13 @@ const History = () => {
         .from('food_uploads')
         .update({ is_deleted: true })
         .eq('user_id', user.id)
-        .eq('is_deleted', false); // Apenas marcar os não deletados
+        .eq('is_deleted', false);
 
       if (error) throw error;
 
       toast.success("Histórico online ocultado com sucesso!");
-      // Forçar re-busca para atualizar a lista imediatamente
-      debouncedFetchData.cancel(); // Cancela buscas pendentes
-      debouncedFetchData(searchTerm); // Inicia nova busca
+      debouncedFetchData.cancel();
+      debouncedFetchData(searchTerm);
     } catch (error) {
       console.error("[History] Erro ao ocultar histórico online:", error);
       toast.error("Falha ao ocultar o histórico online.");
@@ -146,18 +140,13 @@ const History = () => {
       setIsClearing(false);
     }
   };
-  
+
   const handleClearHistory = () => {
     if (isPremiumUser && user) {
-      // Premium: Limpar do Supabase (OPCIONAL - pode ser perigoso)
-      // Implementar com cautela, talvez mover para o perfil
       toast.info("Limpeza do histórico online ainda não implementada.");
-      // Exemplo: await supabase.from('food_uploads').delete().eq('user_id', user.id);
-      // fetchData(searchTerm); // Rebuscar após deletar
     } else {
-      // Não premium: Limpar apenas localStorage
-    setHistoryItems([]);
-    localStorage.removeItem("foodcam-history");
+      setHistoryItems([]);
+      localStorage.removeItem("foodcam-history");
       toast.success("Histórico local limpo com sucesso");
     }
   };
@@ -178,9 +167,7 @@ const History = () => {
           Histórico
         </h1>
         
-        {/* Controles de Filtro e Limpeza */} 
         <div className="flex items-center gap-2">
-           {/* Botão Limpar - Adaptado com AlertDialog para Premium */} 
            {historyItems.length > 0 && !isLoading && (
              <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -189,8 +176,7 @@ const History = () => {
             size="sm"
                     className={`text-foodcam-gray ${isClearing ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={isPremiumUser ? "Ocultar histórico online" : "Limpar histórico local"}
-                    disabled={isClearing} // Desabilitar durante a limpeza
-                    // onClick só é necessário para não premium agora
+                    disabled={isClearing}
                     onClick={!isPremiumUser ? handleClearHistory : undefined} 
                   >
                     {isClearing ? (
@@ -201,7 +187,6 @@ const History = () => {
                     <span className="hidden sm:inline ml-1">Limpar</span>
                   </Button>
                 </AlertDialogTrigger>
-                {/* O conteúdo do AlertDialog só é relevante para Premium */}
                 {isPremiumUser && (
                   <AlertDialogContent className="bg-foodcam-darker border-foodcam-gray/20 text-white">
                     <AlertDialogHeader>
@@ -225,7 +210,6 @@ const History = () => {
                 )}
              </AlertDialog>
            )}
-           {/* Adicionar botão de Filtro (funcionalidade futura) */} 
            {isPremiumUser && (
               <Button variant="outline" size="sm" className="text-foodcam-gray" disabled> 
                  <Filter className="h-4 w-4" />
@@ -235,7 +219,6 @@ const History = () => {
         </div>
       </div>
 
-      {/* Barra de Busca (Premium) */} 
       {isPremiumUser && (
         <div className="relative mb-6">
           <Input 
@@ -259,7 +242,6 @@ const History = () => {
         </div>
       )}
 
-      {/* Mensagem de Upgrade */} 
       {!isPremiumUser && (
          <div className="glass-card p-4 mb-6 flex items-center justify-between gap-4 border border-amber-500/30 bg-gradient-to-r from-amber-950/10 to-foodcam-darker">
             <div>
@@ -272,7 +254,6 @@ const History = () => {
          </div>
       )}
 
-      {/* Lista de Histórico */} 
       {isLoading && (
           <div className="flex justify-center items-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-foodcam-blue" />
@@ -309,10 +290,6 @@ const History = () => {
             ))}
           </div>
       )}
-
-      {/* Paginação/Ver Mais (Pode ser necessário para Supabase) */}
-      {/* ... (Lógica de paginação a ser implementada se necessário) ... */} 
-
     </div>
   );
 };
