@@ -190,7 +190,44 @@ const Profile = () => {
     }
   };
 
-  const isPremiumUser = subscription && subscription.isActive; // Simplificado?
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: { returnUrl: window.location.origin + '/profile' }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error accessing customer portal:', error);
+      toast.error('Não foi possível acessar o portal de gerenciamento da assinatura');
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = 'https://foodcamai.com';
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'FoodCam AI',
+          text: 'Análise nutricional com IA em tempo real',
+          url: shareUrl
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copiado para a área de transferência!');
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        toast.error('Erro ao compartilhar');
+      }
+    }
+  };
+
+  const isPremiumUser = subscription && subscription.isActive;
 
   const fullName = user?.user_metadata?.full_name || 
                   (user?.user_metadata?.first_name && user?.user_metadata?.last_name ? 
@@ -286,6 +323,17 @@ const Profile = () => {
       )}
       
       <div className="space-y-4">
+        {subscription && subscription.isActive && (
+          <div className="glass-card overflow-hidden">
+            <ProfileMenuItem 
+              icon={<Settings className="text-foodcam-blue" />}
+              label="Gerenciar Assinatura"
+              description={`Plano ${subscription.planType === "monthly" ? "Mensal" : "Anual"}`}
+              onPress={handleManageSubscription}
+            />
+          </div>
+        )}
+        
         {!subscription && (
           <Link to="/subscription" className="block">
             <div className="glass-card p-5 flex items-center justify-between border-foodcam-blue/30 border bg-gradient-to-r from-foodcam-darker to-foodcam-dark">
@@ -305,38 +353,10 @@ const Profile = () => {
         
         <div className="glass-card overflow-hidden">
           <ProfileMenuItem 
-            icon={<Bell className="text-foodcam-blue" />}
-            label="Notificações"
-            description="Gerenciar alertas e lembretes"
-            onPress={() => {
-              toast.info("Configurações de notificações serão adicionadas em breve");
-            }}
-          />
-          <ProfileMenuItem 
-            icon={<Moon className="text-foodcam-blue" />}
-            label="Tema Escuro"
-            description="Ativado"
-            isToggle
-            toggled={true}
-          />
-          <ProfileMenuItem 
-            icon={<Settings className="text-foodcam-blue" />}
-            label="Configurações"
-            description="Idioma, unidades, privacidade"
-            onPress={() => {
-              toast.info("Configurações avançadas serão adicionadas em breve");
-            }}
-          />
-        </div>
-        
-        <div className="glass-card overflow-hidden">
-          <ProfileMenuItem 
             icon={<Share2 className="text-foodcam-blue" />}
             label="Compartilhar"
             description="Convide amigos para o app"
-            onPress={() => {
-              toast.info("Funcionalidade de compartilhamento será adicionada em breve");
-            }}
+            onPress={handleShare}
           />
           <ProfileMenuItem 
             icon={<Shield className="text-foodcam-blue" />}
