@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc"; // Mantém o plugin que você usa
 import path from "path";
@@ -19,15 +20,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // --- MODIFIQUE A SEÇÃO 'preview' AQUI ---
+  // --- MODIFICANDO A SEÇÃO 'preview' ---
   preview: {
     allowedHosts: [
       'cloud-test-nodejs.r4loq5.easypanel.host', // Mantenha o host anterior do EasyPanel
-      'foodcamai.com',                          // <<< ADICIONE SEU DOMÍNIO AQUI
-      'www.foodcamai.com'                       // <<< ADICIONE O WWW TAMBÉM (BOA PRÁTICA)
+      '609ae657-5817-4d7d-b96a-f7b4d521e748.lovableproject.com', // Adicionando o host bloqueado
+      'foodcamai.com',                          // Mantendo seu domínio
+      'www.foodcamai.com'                       // Mantendo o www
     ]
-    // Não precisa definir host/port aqui, pois o Procfile já faz isso.
-    // Apenas allowedHosts é crucial para corrigir o erro.
+    // Não precisa definir host/port aqui, pois o Procfile já faz isso
   }
   // --- FIM DA SEÇÃO MODIFICADA ---
 }));
