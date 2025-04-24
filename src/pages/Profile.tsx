@@ -328,7 +328,7 @@ const Profile = () => {
             <ProfileMenuItem 
               icon={<Settings className="text-foodcam-blue" />}
               label="Gerenciar Assinatura"
-              description={`Plano ${subscription.planType === "monthly" ? "Mensal" : "Anual"}`}
+              description={`Plano ${subscription.plan === "monthly" ? "Mensal" : "Anual"}`}
               onPress={handleManageSubscription}
             />
           </div>
