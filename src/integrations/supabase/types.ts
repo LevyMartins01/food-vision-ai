@@ -141,6 +141,42 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      get_daily_goal_progress: {
+        Args: { p_user_id: string; p_days_back?: number }
+        Returns: {
+          date_day: string
+          calories_consumed: number
+          calories_goal: number
+          goal_percentage: number
+        }[]
+      }
+      get_macro_distribution: {
+        Args: { p_user_id: string; p_days_back?: number }
+        Returns: {
+          total_protein_grams: number
+          total_carbs_grams: number
+          total_fat_grams: number
+          protein_calories: number
+          carbs_calories: number
+          fat_calories: number
+          protein_percentage: number
+          carbs_percentage: number
+          fat_percentage: number
+        }[]
+      }
+      get_weekly_nutrition_data: {
+        Args: { p_user_id: string; p_weeks_back?: number }
+        Returns: {
+          week_start: string
+          week_end: string
+          total_calories: number
+          total_protein: number
+          total_carbs: number
+          total_fat: number
+          meal_count: number
+          avg_daily_calories: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
