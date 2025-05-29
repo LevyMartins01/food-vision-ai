@@ -129,6 +129,24 @@ const Profile = () => {
     }
   };
 
+  const handleManageSubscription = () => {
+    // TODO: Implementar gerenciamento de assinatura
+    toast.info("Funcionalidade em desenvolvimento");
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'FoodCam',
+        text: 'Analise suas refeições com IA!',
+        url: window.location.origin,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.origin);
+      toast.success("Link copiado para a área de transferência!");
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-foodcam-dark text-white flex items-center justify-center">
@@ -186,7 +204,11 @@ const Profile = () => {
               caloriesConsumedToday={caloriesConsumedToday}
               onSaveGoal={handleSaveGoal}
             />
-            <ProfileMenus />
+            <ProfileMenus 
+              subscription={subscription}
+              onManageSubscription={handleManageSubscription}
+              onShare={handleShare}
+            />
           </>
         ) : (
           <WeeklyProgress />
