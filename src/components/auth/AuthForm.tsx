@@ -13,12 +13,11 @@ const AuthForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [mode, setMode] = useState<AuthMode>("signup"); // Default to signup
+  const [mode, setMode] = useState<AuthMode>("login"); // Changed default to login
   const [isLoading, setIsLoading] = useState(false);
 
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
-    // Clear form fields when switching modes
     if (newMode === "forgotPassword") {
       setPassword("");
       setConfirmPassword("");
@@ -41,6 +40,7 @@ const AuthForm = () => {
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/`,
             data: {
               first_name: firstName,
               last_name: lastName,
@@ -51,7 +51,6 @@ const AuthForm = () => {
 
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Verifique seu email.");
-        // Switch to login mode after successful signup
         switchMode("login");
       } else if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
@@ -78,47 +77,49 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="glass-card p-6 w-full max-w-md mx-auto">
-      {mode === "login" && (
-        <LoginForm
-          isLoading={isLoading}
-          onSubmit={handleSubmit}
-          setEmail={setEmail}
-          setPassword={setPassword}
-          email={email}
-          password={password}
-          switchToSignup={() => switchMode("signup")}
-          switchToForgotPassword={() => switchMode("forgotPassword")}
-        />
-      )}
+    <div className="glass-card p-8 w-full max-w-md mx-auto backdrop-blur-lg border border-white/20 shadow-2xl">
+      <div className="space-y-6">
+        {mode === "login" && (
+          <LoginForm
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            email={email}
+            password={password}
+            switchToSignup={() => switchMode("signup")}
+            switchToForgotPassword={() => switchMode("forgotPassword")}
+          />
+        )}
 
-      {mode === "signup" && (
-        <SignupForm
-          isLoading={isLoading}
-          onSubmit={handleSubmit}
-          setEmail={setEmail}
-          setPassword={setPassword}
-          setConfirmPassword={setConfirmPassword}
-          setFirstName={setFirstName}
-          setLastName={setLastName}
-          email={email}
-          password={password}
-          confirmPassword={confirmPassword}
-          firstName={firstName}
-          lastName={lastName}
-          switchToLogin={() => switchMode("login")}
-        />
-      )}
+        {mode === "signup" && (
+          <SignupForm
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            setEmail={setEmail}
+            setPassword={setPassword}
+            setConfirmPassword={setConfirmPassword}
+            setFirstName={setFirstName}
+            setLastName={setLastName}
+            email={email}
+            password={password}
+            confirmPassword={confirmPassword}
+            firstName={firstName}
+            lastName={lastName}
+            switchToLogin={() => switchMode("login")}
+          />
+        )}
 
-      {mode === "forgotPassword" && (
-        <ForgotPasswordForm
-          isLoading={isLoading}
-          onSubmit={handleSubmit}
-          setEmail={setEmail}
-          email={email}
-          switchToLogin={() => switchMode("login")}
-        />
-      )}
+        {mode === "forgotPassword" && (
+          <ForgotPasswordForm
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+            setEmail={setEmail}
+            email={email}
+            switchToLogin={() => switchMode("login")}
+          />
+        )}
+      </div>
     </div>
   );
 };

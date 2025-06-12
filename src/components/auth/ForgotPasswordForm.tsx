@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2, KeyRound, ArrowLeft } from "lucide-react";
 import { AuthFormBaseProps } from "./types";
 
 interface ForgotPasswordFormProps extends AuthFormBaseProps {
@@ -18,27 +18,30 @@ const ForgotPasswordForm = ({
   switchToLogin,
 }: ForgotPasswordFormProps) => {
   return (
-    <>
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">Recupere sua senha</h2>
+    <div className="animate-fade-in">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full blue-gradient mb-4">
+          <KeyRound className="w-6 h-6 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Recuperar senha</h2>
         <p className="text-foodcam-gray">
-          Enviaremos instruções para recuperar sua senha
+          Enviaremos as instruções para seu email
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium">
-            Email
+            Email cadastrado
           </label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-foodcam-gray" />
+          <div className="relative group">
+            <Mail className="absolute left-3 top-3 h-5 w-5 text-foodcam-gray group-focus-within:text-foodcam-blue transition-colors" />
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-10"
+              className="pl-11 h-12 glass-card border-white/10 focus:border-foodcam-blue focus:ring-2 focus:ring-foodcam-blue/20 transition-all"
               placeholder="seu-email@exemplo.com"
               required
             />
@@ -47,32 +50,33 @@ const ForgotPasswordForm = ({
 
         <Button
           type="submit"
-          className="w-full blue-gradient"
+          className="w-full h-12 blue-gradient hover:opacity-90 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
           disabled={isLoading}
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Enviando...
             </>
           ) : (
-            <>Recuperar Senha</>
+            <>
+              <Mail className="mr-2 h-5 w-5" />
+              Enviar instruções
+            </>
           )}
         </Button>
       </form>
 
-      <div className="mt-6 text-center">
-        <p className="text-sm text-foodcam-gray">
-          Lembrou sua senha?{" "}
-          <button
-            onClick={switchToLogin}
-            className="text-foodcam-blue hover:underline"
-          >
-            Entre
-          </button>
-        </p>
+      <div className="mt-8 text-center">
+        <button
+          onClick={switchToLogin}
+          className="inline-flex items-center text-sm text-foodcam-blue hover:text-foodcam-blue/80 font-medium transition-colors hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Voltar ao login
+        </button>
       </div>
-    </>
+    </div>
   );
 };
 
